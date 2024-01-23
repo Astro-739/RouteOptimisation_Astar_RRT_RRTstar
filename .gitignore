@@ -1,0 +1,10 @@
+__pycache__
+build/**
+.vscode/settings.json
+.vscode/launch.json
+.env
+env/
+archive/
+*.jpeg
+*.txt
+test*
