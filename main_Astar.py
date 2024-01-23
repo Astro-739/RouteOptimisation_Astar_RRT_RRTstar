@@ -30,8 +30,6 @@ def main():
     a_star = AStarAlgorithm(start_location,goal_location,obstacles,mapdimensions,stepsize)
     
     # draw map with start, goal and obstacles
-    #os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (2200,300)
-    pygame.init()
     map = RRTMap(start_location,goal_location,mapdimensions,obstacles)
     map.drawBaseMap(obstacles)
     pygame.display.update()

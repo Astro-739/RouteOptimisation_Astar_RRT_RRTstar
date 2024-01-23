@@ -11,7 +11,7 @@ from createobstacles import makeCirleObstacles
 
 
 def main():
-    mapdimensions = (1000,1000)          # (height,width) in pygame
+    mapdimensions = (1000,1000)         # (height,width) in pygame
     start_location = (50,50)            # (x,y)
     goal_location = (710,910)           # (x,y)
     obstaclenum = 8
@@ -23,8 +23,6 @@ def main():
                                    obstacleradius,obstaclenum)
     
     rrt = RRTAlgorithm(mapdimensions,obstacles,start_location,goal_location,RRTstar)
-    a_star = AStarAlgorithm(start_location,goal_location,obstacles,mapdimensions)
-    
     
     map = RRTMap(start_location,goal_location,mapdimensions,obstacles)
     map.drawBaseMap(obstacles)
