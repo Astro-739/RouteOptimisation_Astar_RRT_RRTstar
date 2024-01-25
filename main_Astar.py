@@ -1,9 +1,9 @@
 import pygame
 import time
-import os
+import matplotlib.pyplot as plt
 from icecream import ic
 from AStar_algorithm import AStarAlgorithm
-from draw_map import RRTMap
+from draw_map import RoutingMap_pygame,RoutingMap_matplotlib
 from create_obstacles import make_circle_obstacles
 from create_obstacles import make_circle_riskzones
 
@@ -26,46 +26,56 @@ def main():
     riskzones = make_circle_riskzones(mapdimensions,
                                       obstacleradius,
                                       num_obstacles)
-    a_star = AStarAlgorithm(start_location,
+    astar = AStarAlgorithm(start_location,
                             goal_location,
                             riskzones,
                             mapdimensions,
                             stepsize)
     
+    map2 = RoutingMap_matplotlib(start_location,
+                                 goal_location,
+                                 mapdimensions,
+                                 riskzones)
+    map2.draw_basemap()
+    #plt.show()
     # draw map with start, goal and obstacles
-    map = RRTMap(start_location,
-                 goal_location,
-                 mapdimensions,
-                 riskzones)
-    map.drawBaseMap(riskzones)
+    map = RoutingMap_pygame(start_location,
+                        goal_location,
+                        mapdimensions,
+                        riskzones)
+    map.draw_basemap()
     pygame.display.update()
     print("map drawn")
  
  
     time1 = time.time()
     
-    a_star.astar_search()
-    a_star.create_goalpath()
+    astar.astar_search()
+    astar.create_goalpath()
     
     time2 = time.time()
     calc_time = time2 - time1    
     
-    a_star.finalresults.goalpath = a_star.goalpath
-    numberofnodes = len(a_star.gridnodes.nodes)
+    astar.finalresults.goalpath = astar.goalpath
+    numberofnodes = len(astar.gridnodes.nodes)
     
-    map.drawTree(a_star.gridnodes)
+    map2.draw_tree(astar.gridnodes)
+    map2.draw_path(astar.finalresults)
+    plt.show()
+    
+    map.draw_tree(astar.gridnodes)
     pygame.display.update()
     print(f"tree drawn with {numberofnodes} nodes")
     print("calctime =", (calc_time))
     
-    if a_star.goalfound: 
-        map.drawPath(a_star.finalresults,map.LIGHTBLUE,map.EDGETHICKNESS)
+    if astar.goalfound: 
+        map.draw_path(astar.finalresults,map.LIGHTBLUE,map.EDGETHICKNESS)
     else:
         print("goal not found")
     
  
     # print text on map window
-    map.printTextOnMap(numberofnodes)
+    map.print_text_on_map(numberofnodes)
     
     pygame.display.update()
     pygame.event.clear()
