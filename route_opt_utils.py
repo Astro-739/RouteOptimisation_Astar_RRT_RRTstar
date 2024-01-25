@@ -47,7 +47,10 @@ class TreePath:
 
 
 class TreeResults:
-    def __init__(self,start_location:(int,int),goal_location:(int,int)) -> None:
+    def __init__(self,
+                 start_location:(int,int),
+                 goal_location:(int,int)
+                ) -> None:
         self.start_location = start_location
         self.goal_location = goal_location
         self.randomtree = []        #todo  hoe goed gebruiken?
@@ -75,7 +78,10 @@ def node_distance(node1:TreeNode,node2:TreeNode) -> float:
 
 
 # check if node is in free space or within circle obstacle
-def is_freespace_circle(node:TreeNode,obstacles:CircleObstacle,margin:int) -> bool:
+def is_freespace_circle(node:TreeNode,
+                        obstacles:CircleObstacle,
+                        margin:int
+                       ) -> bool:
     # check for all obstacles
     for circle in obstacles:
         # collision when point is within circle radius + margin
@@ -88,7 +94,11 @@ def is_freespace_circle(node:TreeNode,obstacles:CircleObstacle,margin:int) -> bo
 
 # check if connection crosses a circle obstacle
 # todo test formula
-def cross_circle_obstacle(node1:TreeNode,node2:TreeNode,obstacles,margin:int) -> bool:
+def cross_circle_obstacle(node1:TreeNode,
+                          node2:TreeNode,
+                          obstacles:CircleObstacle,
+                          margin:int
+                         ) -> bool:
     # check for all obstacles
     for circle in obstacles:
         # divide connection in 100 points to check each
@@ -105,7 +115,11 @@ def cross_circle_obstacle(node1:TreeNode,node2:TreeNode,obstacles,margin:int) ->
 
 
 # measure distance of node to every node in tree, return nearest
-def nearest_neighbour(node:TreeNode,startnode:TreeNode,randomtree:TreePath,RRTstar:bool) -> TreeNode:
+def nearest_neighbour(node:TreeNode,
+                      startnode:TreeNode,
+                      randomtree:TreePath,
+                      RRTstar:bool
+                     ) -> TreeNode:
     # initialise
     d_min = 100000
     nearestnode = startnode

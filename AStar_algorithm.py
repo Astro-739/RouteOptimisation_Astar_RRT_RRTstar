@@ -257,13 +257,14 @@ class AStarAlgorithm:
 
     # check if node is in free space or within circle obstacle
     def is_freespace(self,location:(int,int)) -> bool:
-        margin = 0
+        MARGIN = 0
         x_map = location[0]
         y_map = location[1]
         # check for all obstacles
         for riskzone in self.obstacles:
             # collision when point is within circle radius + margin
-            if math.dist((x_map,y_map),(riskzone.location)) <= (riskzone.range + margin):
+            if (math.dist((x_map,y_map),(riskzone.location)) 
+                <= (riskzone.range + MARGIN)):
                 return False
         # no collision detected
         return True
