@@ -1,10 +1,9 @@
 import random
 import math
 from icecream import ic
-import route_opt_utils
-from route_opt_utils import TreeResults
-from route_opt_utils import TreeNode
-from route_opt_utils import TreePath
+from route_opt_utils import TreeResults, TreeNode, TreePath
+from route_opt_utils import draw_random_sample, clear_treepath, node_distance
+from route_opt_utils import is_freespace_circle, cross_circle_obstacle, nearest_neighbour
 
 
 
@@ -65,7 +64,7 @@ class RRTAlgorithm:
     # determine node cost and path cost for a node
     def nodeCost_RRTstar(self,node:TreeNode,parentnode:TreeNode) -> None:
         # set node cost
-        node.node_cost = route_opt_utils.nodeDistance(node,parentnode)
+        node.node_cost = node_distance(node,parentnode)
         # set path cost to this node
         path_cost = node.node_cost
         tempnode = node
@@ -85,7 +84,7 @@ class RRTAlgorithm:
         # set node cost
         LOSnode = goalnode
         while LOSnode.location is not self.startnode.location:
-            LOSnode.nodeLOS_cost = int(route_opt_utils.nodeDistance(LOSnode,LOSnode.pathLOS_parent))
+            LOSnode.nodeLOS_cost = int(node_distance(LOSnode,LOSnode.pathLOS_parent))
             print("LOSnode_cost: ",LOSnode.nodeLOS_cost)
             LOSnode = LOSnode.pathLOS_parent
         # set path cost
@@ -110,7 +109,7 @@ class RRTAlgorithm:
         neighbourhood = []
         # check if neighbours are within neighbourhood for all treenodes
         for treenode in self.randomtree.nodes:
-            distance = route_opt_utils.nodeDistance(treenode,node)
+            distance = node_distance(treenode,node)
             if distance < neighbourhoodradius:
                 neighbourhood.append(treenode)
         # update node
@@ -128,7 +127,7 @@ class RRTAlgorithm:
         # find lowest cost neighbour
         for neighbournode in node.neighbourhood:
             # new path cost if node is connected with neighbour
-            newpathcost = neighbournode.path_cost + route_opt_utils.nodeDistance(node,neighbournode)
+            newpathcost = neighbournode.path_cost + node_distance(node,neighbournode)
             if newpathcost < pathcost_min:
                 lowestcostneighbour = neighbournode
                 pathcost_min = newpathcost
@@ -141,7 +140,7 @@ class RRTAlgorithm:
         # xx
         for neighbournode in node.neighbourhood:
             # -
-            newpathcost = node.path_cost + route_opt_utils.nodeDistance(node,neighbournode)
+            newpathcost = node.path_cost + node_distance(node,neighbournode)
             if newpathcost < neighbournode.path_cost:
                 neighbournode.parent = node
                 neighbournode.path_cost = newpathcost
@@ -150,7 +149,7 @@ class RRTAlgorithm:
     # generate new node between target node and nearest node with step size
     # when new node is within goal area, goal node location is used
     def generateStep(self,nearestnode:TreeNode,targetnode:TreeNode) -> bool:                     
-        dist = route_opt_utils.nodeDistance(nearestnode,targetnode)
+        dist = node_distance(nearestnode,targetnode)
         # for the case where random picked the location of the nearest node exactly
         if dist == 0:
             stepnode = None
@@ -164,19 +163,19 @@ class RRTAlgorithm:
                         * (targetnode.location[1] - nearestnode.location[1]))
             stepnode = TreeNode((x_step,y_step))
         # when step is within goal area, stepnode will have location of goalnode
-        if route_opt_utils.nodeDistance(stepnode,self.goalnode) <= (self.STEPSIZE + self.GOALRADIUS):
+        if node_distance(stepnode,self.goalnode) <= (self.STEPSIZE + self.GOALRADIUS):
             stepnode.location = self.goalnode.location
             self.goalfound = True          # todo, check juiste plek, moet ook nog toevoegen als node in list
             print("goal found")
         # if step node not in free space, return false
-        if not route_opt_utils.isFreeSpaceCircle(stepnode,self.obstacles,self.SAFETYMARGIN):
+        if not is_freespace_circle(stepnode,self.obstacles,self.SAFETYMARGIN):
             return False
         if self.RRTstar and not self.goalfound:
             parentnode = self.lowestCostNeighbour(stepnode,nearestnode)
         else:
             parentnode = nearestnode
         # if connection of step node crosses obstacle, return false
-        if route_opt_utils.crossCircleObstacle(parentnode,stepnode,self.obstacles,self.SAFETYMARGIN):
+        if cross_circle_obstacle(parentnode,stepnode,self.obstacles,self.SAFETYMARGIN):
             return False
         # add new node to tree
         self.addTreeNode(stepnode,parentnode)
@@ -193,19 +192,19 @@ class RRTAlgorithm:
         while_loops = 0
         # generate random target in free space   #todo  deze weghalen?
         while (not free_randompoint) and while_loops < 20:
-            randomnode = TreeNode(route_opt_utils.drawRandomSample(self.mapwidth,self.mapheight))  
-            free_randompoint = route_opt_utils.isFreeSpaceCircle(randomnode,self.obstacles,self.SAFETYMARGIN)        
+            randomnode = TreeNode(draw_random_sample(self.mapwidth,self.mapheight))  
+            free_randompoint = is_freespace_circle(randomnode,self.obstacles,self.SAFETYMARGIN)        
             while_loops += 1
             if while_loops == 20: print(f"random point generation stopped, none in free space")
         # make step with STEPSIZE from nearest node in direction of random point
-        nearestnode = route_opt_utils.nearestNeighbour(randomnode,self.startnode,self.randomtree,self.RRTstar)
+        nearestnode = nearest_neighbour(randomnode,self.startnode,self.randomtree,self.RRTstar)
         self.generateStep(nearestnode,randomnode)
 
     # expand tree in direction of goal    
     def biasStep(self) -> None:
         # goalnode is target
         targetnode = self.goalnode
-        nearestnode = route_opt_utils.nearestNeighbour(targetnode,self.startnode,self.randomtree,self.RRTstar)
+        nearestnode = nearest_neighbour(targetnode,self.startnode,self.randomtree,self.RRTstar)
         # generate step
         self.generateStep(nearestnode,targetnode)
         
@@ -214,7 +213,7 @@ class RRTAlgorithm:
         if not self.goalfound: 
             return False
         # initialise
-        route_opt_utils.clearTreePath(self.goalpath)
+        clear_treepath(self.goalpath)
         # reconstructing the path backwards from goal using parents
         node = latestgoalnode
         while node is not self.startnode:
@@ -250,7 +249,7 @@ class RRTAlgorithm:
     def setExclusionZone(self) -> None:
         exclusionradius = 200        #!
         for node in self.randomtree.nodes:
-            if route_opt_utils.nodeDistance(node,self.goalnode) < exclusionradius:
+            if node_distance(node,self.goalnode) < exclusionradius:
                 node.memberofpath = True
 
 
@@ -264,7 +263,7 @@ class RRTAlgorithm:
         # add path to pathLOS result
         if not self.goalfound: 
             return False
-        route_opt_utils.clearTreePath(self.goalpathLOS)    #todo, goalpathLOS used anywhere?
+        clear_treepath(self.goalpathLOS)    #todo, goalpathLOS used anywhere?
         # latestgoalnode is latest new node at goal location, becomes basenode
         LOSbasenode = latestgoalnode
         # start LOS checks at start node walking towards LOS basenode
@@ -272,7 +271,7 @@ class RRTAlgorithm:
         while LOSbasenode.location is not self.startnode.location:
             # if node has LOS with basenode, add it to the LOS path
             # node then becomes the next LOS basenode
-            if not route_opt_utils.crossCircleObstacle(node,LOSbasenode,self.obstacles,self.SAFETYMARGIN):
+            if not cross_circle_obstacle(node,LOSbasenode,self.obstacles,self.SAFETYMARGIN):
                 newLOSnode = TreeNode(node.location)
                 #todo add node to goalpathLOS?
                 # node and LOS basenode become each others parent and child

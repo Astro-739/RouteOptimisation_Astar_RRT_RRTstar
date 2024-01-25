@@ -1,6 +1,8 @@
 import math
-from route_opt_utils import TreeResults, CircleObstacle
 from icecream import ic
+from route_opt_utils import TreeResults, CircleObstacle
+
+
 
 class GridNode:
     def __init__(self,location:(int,int)) -> None:

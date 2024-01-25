@@ -78,7 +78,8 @@ def main():
             running = False
     pygame.quit ()
     
-    
+
+# start main    
 if __name__ == '__main__':
     main()
     

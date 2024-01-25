@@ -56,31 +56,30 @@ class TreeResults:
 
 
 # draw random point within borders of map
-def drawRandomSample(mapwidth:int,mapheight:int) -> int:
+def draw_random_sample(mapwidth:int,mapheight:int) -> int:
     x = int(random.uniform(0,mapwidth))        
     y = int(random.uniform(0,mapheight))
     randompoint = (x,y)
     return randompoint
 
 
-def clearTreePath(path:TreePath) -> None:
+def clear_treepath(path:TreePath) -> None:
     path.nodes = []
     path.path_cost = 0
 
 
 # determine distance between 2 nodes
-def nodeDistance(node1:TreeNode,node2:TreeNode) -> float: 
-    nodedistance = math.dist((node1.location[0],node1.location[1]),
-                             (node2.location[0],node2.location[1])) 
+def node_distance(node1:TreeNode,node2:TreeNode) -> float: 
+    nodedistance = math.dist(node1.location,node2.location)
     return nodedistance
 
 
 # check if node is in free space or within circle obstacle
-def isFreeSpaceCircle(node:TreeNode,obstacles:CircleObstacle,margin:int) -> bool:
+def is_freespace_circle(node:TreeNode,obstacles:CircleObstacle,margin:int) -> bool:
     # check for all obstacles
     for circle in obstacles:
-        # collision when point is within circle radius + margin #todo location as object?
-        if (math.dist((node.location[0],node.location[1]),(circle.location))
+        # collision when point is within circle radius + margin
+        if (math.dist((node.location),(circle.location))
             <= (circle.radius + margin)):
             return False
     # no collision detected
@@ -89,7 +88,7 @@ def isFreeSpaceCircle(node:TreeNode,obstacles:CircleObstacle,margin:int) -> bool
 
 # check if connection crosses a circle obstacle
 # todo test formula
-def crossCircleObstacle(node1:TreeNode,node2:TreeNode,obstacles,margin:int) -> bool:
+def cross_circle_obstacle(node1:TreeNode,node2:TreeNode,obstacles,margin:int) -> bool:
     # check for all obstacles
     for circle in obstacles:
         # divide connection in 100 points to check each
@@ -99,14 +98,14 @@ def crossCircleObstacle(node1:TreeNode,node2:TreeNode,obstacles,margin:int) -> b
             x = node1.location[0] * u + node2.location[0] * (1-u)
             y = node1.location[1] * u + node2.location[1] * (1-u)
             # collision when point is within circle radius + margin
-            if math.dist((x,y),(circle[0],circle[1])) <= (circle[2] + margin):
+            if math.dist((x,y),(circle.location)) <= (circle.radius + margin):
                 return True             
     # no collision detected
     return False
 
 
 # measure distance of node to every node in tree, return nearest
-def nearestNeighbour(node:TreeNode,startnode:TreeNode,randomtree:TreePath,RRTstar:bool) -> TreeNode:
+def nearest_neighbour(node:TreeNode,startnode:TreeNode,randomtree:TreePath,RRTstar:bool) -> TreeNode:
     # initialise
     d_min = 100000
     nearestnode = startnode
@@ -116,7 +115,7 @@ def nearestNeighbour(node:TreeNode,startnode:TreeNode,randomtree:TreePath,RRTsta
         if not RRTstar and neighbournode.memberofpath:
             continue
         # check if neighbour is nearest neighbour
-        distance = nodeDistance(neighbournode,node)
+        distance = node_distance(neighbournode,node)
         if distance < d_min:                
             d_min = distance
             nearestnode = neighbournode
