@@ -4,8 +4,8 @@ import os
 from icecream import ic
 from RRT_algorithm import RRTAlgorithm
 from AStar_algorithm import AStarAlgorithm
-from drawmap import RRTMap
-from createobstacles import makeCirleObstacles
+from draw_map import RRTMap
+from create_obstacles import make_circle_obstacles
 
 
 
@@ -19,18 +19,25 @@ def main():
     update_map = True
     RRTstar = False
     
-    obstacles = makeCirleObstacles(start_location,goal_location,mapdimensions,
-                                   obstacleradius,obstaclenum)
+    obstacles = make_circle_obstacles(start_location,
+                                      goal_location,
+                                      mapdimensions,
+                                      obstacleradius,
+                                      obstaclenum)
+    rrt = RRTAlgorithm(mapdimensions,
+                       obstacles,
+                       start_location,
+                       goal_location,
+                       RRTstar)
+    map = RRTMap(start_location,
+                 goal_location,
+                 mapdimensions,
+                 obstacles)
     
-    rrt = RRTAlgorithm(mapdimensions,obstacles,start_location,goal_location,RRTstar)
-    
-    map = RRTMap(start_location,goal_location,mapdimensions,obstacles)
     map.drawBaseMap(obstacles)
     pygame.display.update()
     print("map drawn")
  
- 
-    
     calc_time = 0
     iteration = 0
     time1 = time.time()  

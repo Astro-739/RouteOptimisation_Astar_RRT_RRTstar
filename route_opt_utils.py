@@ -3,6 +3,26 @@ import math
 from icecream import ic
 
 
+
+class RiskZone:    
+    def __init__(self,location:(int,int),radius:(int)) -> None:
+        self.location = location
+        self.radius = radius
+        self.radiusLOS = radius
+        
+
+class CircleObstacle:    
+    def __init__(self,location:(int,int),radius:(int)) -> None:
+        self.location = location
+        self.radius = radius
+        self.radiusLOS = radius
+
+
+class SquareObstacle:
+    def __init__(self) -> None:
+        pass
+
+
 class TreeNode:
     def __init__(self,location:(int,int)) -> None:
         self.location = location
@@ -35,9 +55,6 @@ class TreeResults:
         self.goalpathLOS = []
 
 
-
-# ----------------------------------------------------------
-
 # draw random point within borders of map
 def drawRandomSample(mapwidth:int,mapheight:int) -> int:
     x = int(random.uniform(0,mapwidth))        
@@ -53,18 +70,18 @@ def clearTreePath(path:TreePath) -> None:
 
 # determine distance between 2 nodes
 def nodeDistance(node1:TreeNode,node2:TreeNode) -> float: 
-    nodedistance = math.dist((node1.location[0],node1.location[1]), \
-                    (node2.location[0],node2.location[1])) 
+    nodedistance = math.dist((node1.location[0],node1.location[1]),
+                             (node2.location[0],node2.location[1])) 
     return nodedistance
 
 
 # check if node is in free space or within circle obstacle
-def isFreeSpaceCircle(node:TreeNode,obstacles,margin:int) -> bool:
+def isFreeSpaceCircle(node:TreeNode,obstacles:CircleObstacle,margin:int) -> bool:
     # check for all obstacles
     for circle in obstacles:
-        # collision when point is within circle radius + margin
-        if math.dist((node.location[0],node.location[1]),(circle[0],circle[1])) \
-                    <= (circle[2] + margin):
+        # collision when point is within circle radius + margin #todo location as object?
+        if (math.dist((node.location[0],node.location[1]),(circle.location))
+            <= (circle.radius + margin)):
             return False
     # no collision detected
     return True

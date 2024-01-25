@@ -3,9 +3,15 @@ import time
 from icecream import ic
 from RRT_algorithm import TreeResults
 from RRT_algorithm import TreePath
+from route_opt_utils import CircleObstacle
 
 class RRTMap:
-    def __init__(self,start_xy:(int,int),goal_xy:(int,int),mapdimensions:(int,int),obstacles:list):
+    def __init__(self,
+                 start_xy:(int,int),
+                 goal_xy:(int,int),
+                 mapdimensions:(int,int),
+                 obstacles:list[CircleObstacle]
+                 ) -> None:
         self.start_xy = start_xy                                # tuple of xy coordinates
         self.goal_xy = goal_xy                                  # tuple of xy coordinates
         self.mapdimensions = mapdimensions                      # tuple of yx dimensions
@@ -37,13 +43,13 @@ class RRTMap:
 
 
     # draw base map with start and goal locations and obstacles
-    def drawBaseMap(self,obstacles:list):
+    def drawBaseMap(self,obstacles:list[CircleObstacle]):
         pygame.draw.circle(self.map,self.GREEN,self.goal_xy,self.NODERADIUS+20,5)       # goal location
         pygame.draw.circle(self.map,self.GREEN,self.start_xy,self.NODERADIUS+8,5)       # start location
         pygame.draw.circle(self.map,self.GREY,self.start_xy,self.NODERADIUS+3,0)        # draw start node
         # draw all obstacles on map
         for circle in obstacles:
-            pygame.draw.circle(self.map,self.RED,(circle[0],circle[1]),circle[2],self.NODERADIUS+2)
+            pygame.draw.circle(self.map,self.RED,circle.location,circle.radius,self.NODERADIUS+2)
         
     # draw all children and their connections to parent in tree
     def drawTree(self,randomtree:TreePath):
@@ -53,7 +59,11 @@ class RRTMap:
                 pygame.draw.line(self.map,self.GREY,node.location,node.parent.location,self.EDGETHICKNESS)
     
     # draw each path starting at goal
-    def drawPath(self,results:TreeResults,colour:(int,int,int),linethickness:int):
+    def drawPath(self,
+                 results:TreeResults,
+                 colour:(int,int,int),
+                 linethickness:int
+                 ) -> None:
         for goalnode in results.goalpath:
             # for a path draw each node and connection to node parent 
             node = goalnode
@@ -65,7 +75,11 @@ class RRTMap:
         pygame.draw.circle(self.map,colour,results.start_location,self.NODERADIUS+3,0)
 
     #todo integrate with above?
-    def drawPathLOS(self,results:TreeResults,colour:(int,int,int),linethickness:int) -> None:
+    def drawPathLOS(self,
+                    results:TreeResults,
+                    colour:(int,int,int),
+                    linethickness:int
+                    ) -> None:
         # draw each path starting at goal
         for goalnode in results.goalpath:
             # for a path draw each node and connection to node parent 
@@ -93,7 +107,10 @@ class RRTMap:
         #self.map.blit(text_surface,(self.mapwidth - 150,self.mapheight - 20))
         pygame.display.update()
 
-    def updateMap(self,obstacles:list,randomtree:TreePath) -> None:
+    def updateMap(self,
+                  obstacles:list[CircleObstacle],
+                  randomtree:TreePath
+                  ) -> None:
         self.map.fill((255,255,255))
         self.drawBaseMap(obstacles)
         self.drawTree(randomtree)

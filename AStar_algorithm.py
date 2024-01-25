@@ -1,5 +1,5 @@
 import math
-from RRT_utils import TreeResults
+from route_opt_utils import TreeResults, CircleObstacle
 from icecream import ic
 
 class GridNode:
@@ -24,8 +24,15 @@ class GridPath:
         self.path_f_cost = 0
 
 
+
 class AStarAlgorithm:
-    def __init__(self,start_location,goal_location,obstacles,mapdimensions,stepsize) -> None:
+    def __init__(self,
+                 start_location:(int,int),
+                 goal_location:(int,int),
+                 obstacles:list[CircleObstacle],
+                 mapdimensions:(int,int),
+                 stepsize:int
+                 ) -> None:
         self.start_location = start_location
         self.goal_location = goal_location
         self.obstacles = obstacles
@@ -48,7 +55,7 @@ class AStarAlgorithm:
                 
         self.finalresults = TreeResults(start_location,goal_location)
     
-    def astarsearch(self) -> None:
+    def astar_search(self) -> None:
         # create startnode, goalnode
         # initialise openlist and closedlist
         # put startnode on openlist
@@ -104,14 +111,14 @@ class AStarAlgorithm:
                 new_location = (location_and_edge[0],location_and_edge[1])
                 new_edge = location_and_edge[2]
                 # if not within map dimenstions, continue to next gridpoint
-                if not self.is_withinmapdimensions(new_location):
+                if not self.is_within_mapdimensions(new_location):
                     continue
                 # create tempnode at gridpoint
                 tempnode = GridNode(new_location)
                 tempnode.edgelength = new_edge
                 # set riskzone count and multiplyer for tempnode
-                self.setriskzonecount(tempnode)
-                self.setriskmultiplyer(tempnode)
+                self.set_riskzone_count(tempnode)
+                self.set_riskmultiplyer(tempnode)
                 # calculate costs based on risk multiplyer
                 self.calc_edge_cost(tempnode)
                 self.calc_g_cost(tempnode,qnode)
@@ -126,7 +133,7 @@ class AStarAlgorithm:
                 # check for existing node on this location
                 # if node exists, it is on openlist or closedlist (in this implementation)
                 node = None
-                node = self.existinggridnode(new_location)
+                node = self.existing_gridnode(new_location)
                 # if existing node and f_cost lower, leave as is, go to next point
                 if node is not None and node.f_cost < tempnode.f_cost:
                     continue
@@ -154,13 +161,13 @@ class AStarAlgorithm:
             print(f"openlist items: {len(self.openlist)}")
             print(f"closedlist items: {len(self.closedlist)}")
 
-    def creategrid(self) -> None:
+    def create_grid(self) -> None:
         pass
     
-    def updatenode(self) -> None:
+    def update_node(self) -> None:
         pass
     
-    def setriskzonecount(self,node:GridNode) -> None:
+    def set_riskzone_count(self,node:GridNode) -> None:
         # initialise
         lowrisk_cnt = 0
         mediumrisk_cnt = 0
@@ -168,22 +175,22 @@ class AStarAlgorithm:
         x_map = node.location[0]
         y_map = node.location[1]
         # risk range settings
-        lowrisk_range = 1.0
-        mediumrisk_range = 0.8
-        highrisk_range = 0.5
+        LOWRISK_RANGE = 1.0
+        MEDIUMRISK_RANGE = 0.8
+        HIGHRISK_RANGE = 0.5
         # check for all obstacles
-        for circle in self.obstacles:
+        for riskzone in self.obstacles:
             # distance between node location and centre of circle
-            dist = math.dist((x_map,y_map),(circle[0],circle[1]))
+            dist = math.dist((x_map,y_map),(riskzone.location))
             # if outside cirle, continue
-            if dist > circle[2]:
+            if dist > riskzone.radius:
                 continue
             # if in highrisk zone
-            if dist < highrisk_range * circle[2]:
+            if dist < HIGHRISK_RANGE * riskzone.radius:
                 highrisk_cnt += 1
                 continue
             # if in mediumrisk zone
-            if dist < mediumrisk_range * circle[2]:
+            if dist < MEDIUMRISK_RANGE * riskzone.radius:
                 mediumrisk_cnt += 1
                 continue
             # else in lowrisk zone
@@ -194,20 +201,20 @@ class AStarAlgorithm:
         node.mediumriskzone_cnt = mediumrisk_cnt
         node.highriskzone_cnt = highrisk_cnt
 
-    def setriskmultiplyer(self,node:GridNode) -> None:
+    def set_riskmultiplyer(self,node:GridNode) -> None:
         # initialise
         riskmultiplyer = 0
         # risk values
-        lowrisk_value = 3
-        mediumrisk_value = 5
-        highrisk_value = 10
+        LOWRISK_VALUE = 3
+        MEDIUMRISK_VALUE = 5
+        HIGHRISK_VALUE = 10
         # determine riskmultiplyer
         if node.lowriskzone_cnt > 0:
-            riskmultiplyer = riskmultiplyer + lowrisk_value + (node.lowriskzone_cnt - 1)
+            riskmultiplyer = riskmultiplyer + LOWRISK_VALUE + (node.lowriskzone_cnt - 1)
         if node.mediumriskzone_cnt > 0:
-            riskmultiplyer = riskmultiplyer + mediumrisk_value + (node.mediumriskzone_cnt - 1)
+            riskmultiplyer = riskmultiplyer + MEDIUMRISK_VALUE + (node.mediumriskzone_cnt - 1)
         if node.highriskzone_cnt > 0:
-            riskmultiplyer = riskmultiplyer + highrisk_value + (node.highriskzone_cnt - 1)
+            riskmultiplyer = riskmultiplyer + HIGHRISK_VALUE + (node.highriskzone_cnt - 1)
         # default value is 1
         if riskmultiplyer == 0:
             riskmultiplyer = 1
@@ -240,7 +247,7 @@ class AStarAlgorithm:
         node.h_cost = math.dist((x1,y1),(x2,y2)) 
     
     # assumption is if existing it is on either openlist or closedlist                
-    def existinggridnode(self,location:(int,int)) -> GridNode:
+    def existing_gridnode(self,location:(int,int)) -> GridNode:
         for gridnode in self.gridnodes.nodes:
             if gridnode.location == location:
                 return gridnode
@@ -252,14 +259,14 @@ class AStarAlgorithm:
         x_map = location[0]
         y_map = location[1]
         # check for all obstacles
-        for circle in self.obstacles:
+        for riskzone in self.obstacles:
             # collision when point is within circle radius + margin
-            if math.dist((x_map,y_map),(circle[0],circle[1])) <= (circle[2] + margin):
+            if math.dist((x_map,y_map),(riskzone.location)) <= (riskzone.range + margin):
                 return False
         # no collision detected
         return True
     
-    def is_withinmapdimensions(self,location:(int,int)) -> bool:
+    def is_within_mapdimensions(self,location:(int,int)) -> bool:
         # initialise
         x_map = location[0]
         y_map = location[1]
