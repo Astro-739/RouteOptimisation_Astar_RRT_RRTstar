@@ -15,10 +15,10 @@ class RoutingMap_pygame:
                  mapdimensions:(int,int),
                  obstacles:list[CircleObstacle]
                  ) -> None:
-        self.start_xy = start_xy                                # tuple of xy coordinates
-        self.goal_xy = goal_xy                                  # tuple of xy coordinates
-        self.mapdimensions = mapdimensions                      # tuple of yx dimensions
-        self.mapheight,self.mapwidth = self.mapdimensions       # int of y and x dimension
+        self.start_xy = start_xy
+        self.goal_xy = goal_xy
+        self.mapdimensions = mapdimensions
+        self.mapheight,self.mapwidth = self.mapdimensions
         self.obstacles = obstacles
         
         # window settings
@@ -131,10 +131,10 @@ class RoutingMap_matplotlib:
                  obstacles:list[CircleObstacle]
                  ) -> None:
         self.start_xy = start_xy
-        self.start_x,self.start_y = start_xy                                # tuple of xy coordinates
-        self.goal_x,self.goal_y = goal_xy                                  # tuple of xy coordinates
-        self.mapdimensions = mapdimensions                      # tuple of yx dimensions
-        self.mapheight,self.mapwidth = self.mapdimensions       # int of y and x dimension
+        self.start_x,self.start_y = start_xy
+        self.goal_x,self.goal_y = goal_xy
+        self.mapdimensions = mapdimensions
+        self.mapheight,self.mapwidth = self.mapdimensions
         self.obstacles = obstacles
     
         #colours

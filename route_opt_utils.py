@@ -93,16 +93,21 @@ def is_freespace_circle(node:TreeNode,
 
 
 # check if connection crosses a circle obstacle
-# todo test formula
 def cross_circle_obstacle(node1:TreeNode,
                           node2:TreeNode,
                           obstacles:CircleObstacle,
                           margin:int
                          ) -> bool:
+    # init
+    line_length = math.dist(node1.location,node2.location)
     # check for all obstacles
     for circle in obstacles:
+        # check if line is far enough away from circle to not cross
+        dist1 = math.dist(node1.location,circle.location)
+        dist2 = math.dist(node2.location,circle.location)
+        if (dist1 or dist2) > (line_length + circle.radius + margin):
+            continue
         # divide connection in 100 points to check each
-        margin = 0              #!   test, remove
         for i in range(0,101):
             u = i/100                   
             x = node1.location[0] * u + node2.location[0] * (1-u)
