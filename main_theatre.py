@@ -9,7 +9,11 @@ def main() -> None:
     theatre = Theatre()
     
     theatre.create_random_theatre()
-    theatre.draw_theatre()
+    helper_boxes = True
+    theatre.draw_theatre(helper_boxes)
+    
+    theatre.create_threatre_mesh()
+    
 
 
 # start main    

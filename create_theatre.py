@@ -1,6 +1,7 @@
 import random
 import math
-from shapely.geometry import Point,Polygon
+from shapely.geometry import Point,Polygon,LineString
+from shapely.geometry import box
 import matplotlib.pyplot as plt
 
 
@@ -8,33 +9,31 @@ import matplotlib.pyplot as plt
 class Theatre:
     def __init__(self) -> None:
         self.blue_airfields = []
-        self.blue_cvs = []
         self.blue_sams = []
         self.blue_vehicles = []
         self.blue_factories = []
+        self.blue_all = []
         self.red_airfields = []
-        self.red_cvs = []
         self.red_sams = []
         self.red_vehicles = []
         self.red_factories = []
+        self.red_all = []
+        self.all_units = []
         # map dimensions
         self.MAPWIDTH = 1000
         self.MAPHEIGHT = 1000
         # boxes for random unit placement
-        self.BLUE_BOX_ABS = (225,300)
-        self.BLUE_BOX_HEIGHT = 400
-        self.BLUE_BOX_WIDTH = 250
-        self.RED_BOX_ABS = (525,300)
-        self.RED_BOX_HEIGHT = 400
-        self.RED_BOX_WIDTH = 250
-        self.AIRFIELD_BOX_REL = (50,100)
+        self.BLUE_BOX_ABS = (275,350)
+        self.BLUE_BOX_HEIGHT = 300
+        self.BLUE_BOX_WIDTH = 200
+        self.RED_BOX_ABS = (525,350)
+        self.RED_BOX_HEIGHT = 300
+        self.RED_BOX_WIDTH = 200
+        self.AIRFIELD_BOX_REL = (25,50)
         self.AIRFIELD_BOX_HEIGHT = 200
         self.AIRFIELD_BOX_WIDTH = 150
-        self.CV_BOX_REL = (50,50)
-        self.CV_BOX_HEIGHT = 50
-        self.CV_BOX_WIDTH = 100
-        self.LORAD_N_BOX_REL = (100,225)
-        self.LORAD_S_BOX_REL = (100,125)
+        self.LORAD_N_BOX_REL = (75,175)
+        self.LORAD_S_BOX_REL = (75,75)
         self.LORAD_BOX_HEIGHT = 50
         self.LORAD_BOX_WIDTH = 50
         # colours
@@ -54,30 +53,6 @@ class Theatre:
 
     
     def create_random_theatre(self) -> None:
-        """
-        plot boxes
-        draw 1-2 blue airfield
-        draw 0-1 blue CV
-        draw 1-2 blue LORAD
-        draw MERAD at each airfield
-        draw 2-4 MERAD
-        draw 10-15 vehicles
-        draw 3-5 factories
-        """
-
-        # blue box
-        x_data = [self.BLUE_BOX_ABS[0],
-                  self.BLUE_BOX_ABS[0],
-                  self.BLUE_BOX_ABS[0] + self.BLUE_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0] + self.BLUE_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0]]
-        y_data = [self.BLUE_BOX_ABS[1],
-                  self.BLUE_BOX_ABS[1] + self.BLUE_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1] + self.BLUE_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1],
-                  self.BLUE_BOX_ABS[1]]
-        plt.plot(x_data,y_data,"b--",lw=0.5)
-
         # blue vehicles
         num_vehicles = round(random.uniform(10,15))
         print("blue vehicles: ",num_vehicles)
@@ -88,7 +63,9 @@ class Theatre:
                                           self.BLUE_BOX_ABS[1] + self.BLUE_BOX_HEIGHT))
             blue_vehicle = Vehicle((x_random,y_random),0,10,"blue")
             self.blue_vehicles.append(blue_vehicle)
-        
+            self.blue_all.append(blue_vehicle)
+            self.all_units.append(blue_vehicle)
+
         # blue factories
         num_factories = round(random.uniform(3,5))
         print("blue factories: ",num_factories)
@@ -99,6 +76,8 @@ class Theatre:
                                           self.BLUE_BOX_ABS[1] + self.BLUE_BOX_HEIGHT))
             blue_factory = Factory((x_random,y_random),100,"blue")
             self.blue_factories.append(blue_factory)
+            self.blue_all.append(blue_factory)
+            self.all_units.append(blue_factory)
 
         # blue merad
         num_merad = round(random.uniform(2,5))
@@ -110,6 +89,8 @@ class Theatre:
                                           self.BLUE_BOX_ABS[1] + self.BLUE_BOX_HEIGHT))
             blue_merad = SAM_AAA((x_random,y_random),0,30,"merad",50,"blue")
             self.blue_sams.append(blue_merad)
+            self.blue_all.append(blue_merad)
+            self.all_units.append(blue_merad)
         
         # blue airfield random locations (between 1 and 2 airfields)
         num_airfields = round(random.uniform(1,2))
@@ -121,64 +102,16 @@ class Theatre:
                                           self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1] + self.AIRFIELD_BOX_HEIGHT))
             blue_airfield = Airfield((x_random,y_random),100,90,"blue")
             self.blue_airfields.append(blue_airfield)
+            self.blue_all.append(blue_airfield)
+            self.all_units.append(blue_airfield)
             blue_merad = SAM_AAA((x_random+5,y_random+5),0,30,"merad",50,"blue")
             self.blue_sams.append(blue_merad)
-        
-        # blue airfield box
-        x_data = [self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0],
-                  self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0],
-                  self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0] + self.AIRFIELD_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0] + self.AIRFIELD_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0]]
-        y_data = [self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1],
-                  self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1] + self.AIRFIELD_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1] + self.AIRFIELD_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1],
-                  self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1]]
-        plt.plot(x_data,y_data,"b--",lw=0.5)
-        """
-        # blue cv random locations (between 0 and 1 cvs)
-        num_cvs = round(random.uniform(0,1))
-        print("blue cv: ",num_cvs)
-        if num_cvs == 1:
-            x_random = int(random.uniform(self.BLUE_BOX_ABS[0] + self.CV_BOX_REL[0],
-                                          self.BLUE_BOX_ABS[0] + self.CV_BOX_REL[0] + self.CV_BOX_WIDTH))
-            y_random = int(random.uniform(self.BLUE_BOX_ABS[1] + self.CV_BOX_REL[1],
-                                          self.BLUE_BOX_ABS[1] + self.CV_BOX_REL[1] + self.CV_BOX_HEIGHT))
-            blue_cv = CV((x_random,y_random),0,100,90,"blue")
-            self.blue_cvs.append(blue_cv)
-
-        # blue cv box
-        x_data = [self.BLUE_BOX_ABS[0] + self.CV_BOX_REL[0],
-                  self.BLUE_BOX_ABS[0] + self.CV_BOX_REL[0],
-                  self.BLUE_BOX_ABS[0] + self.CV_BOX_REL[0] + self.CV_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0] + self.CV_BOX_REL[0] + self.CV_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0] + self.CV_BOX_REL[0]]
-        y_data = [self.BLUE_BOX_ABS[1] + self.CV_BOX_REL[1],
-                  self.BLUE_BOX_ABS[1] + self.CV_BOX_REL[1] + self.CV_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1] + self.CV_BOX_REL[1] + self.CV_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1] + self.CV_BOX_REL[1],
-                  self.BLUE_BOX_ABS[1] + self.CV_BOX_REL[1]]
-        plt.plot(x_data,y_data,"b--",lw=0.5)
-        """
-        
-        
-        # blue lorad N box
-        x_data = [self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0],
-                  self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0],
-                  self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0] + self.LORAD_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0] + self.LORAD_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0]]
-        y_data = [self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1],
-                  self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1] + self.LORAD_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1] + self.LORAD_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1],
-                  self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1]]
-        plt.plot(x_data,y_data,"b--",lw=0.5)
+            self.blue_all.append(blue_merad)
+            self.all_units.append(blue_merad)
 
         # blue lorad N random locations (between 1 and 1)
         num_lorad = round(random.uniform(1,1))
-        print("blue lorad: ",num_lorad)
+        print("blue lorad N: ",num_lorad)
         if num_lorad == 1:
             x_random = int(random.uniform(self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0],
                                           self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0] + self.LORAD_BOX_WIDTH))
@@ -186,32 +119,12 @@ class Theatre:
                                           self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1] + self.LORAD_BOX_HEIGHT))
             blue_lorad = SAM_AAA((x_random,y_random),0,150,"lorad",80,"blue")
             self.blue_sams.append(blue_lorad)
+            self.blue_all.append(blue_lorad)
+            self.all_units.append(blue_lorad)
 
-
-        # blue lorad S box
-        x_data = [self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0],
-                  self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0],
-                  self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0] + self.LORAD_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0] + self.LORAD_BOX_WIDTH,
-                  self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0]]
-        y_data = [self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1],
-                  self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1] + self.LORAD_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1] + self.LORAD_BOX_HEIGHT,
-                  self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1],
-                  self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1]]
-        plt.plot(x_data,y_data,"b--",lw=0.5)
-        # red box
-        x_data = [self.RED_BOX_ABS[0],
-                  self.RED_BOX_ABS[0],
-                  self.RED_BOX_ABS[0] + self.RED_BOX_WIDTH,
-                  self.RED_BOX_ABS[0] + self.RED_BOX_WIDTH,
-                  self.RED_BOX_ABS[0]]
-        y_data = [self.RED_BOX_ABS[1],
-                  self.RED_BOX_ABS[1] + self.RED_BOX_HEIGHT,
-                  self.RED_BOX_ABS[1] + self.RED_BOX_HEIGHT,
-                  self.RED_BOX_ABS[1],
-                  self.RED_BOX_ABS[1]]
-        plt.plot(x_data,y_data,"r--",lw=0.5)
+        # blue lorad S random locations (between 0 and 0)
+        num_lorad = 0
+        print("blue lorad S: ",num_lorad)
 
         # red vehicles
         num_vehicles = round(random.uniform(15,20))
@@ -259,6 +172,162 @@ class Theatre:
             red_merad = SAM_AAA((x_random-5,y_random+5),0,40,"merad",50,"red")
             self.red_sams.append(red_merad)
 
+        # red lorad N random locations (between 1 and 1)
+        num_lorad = round(random.uniform(1,1))
+        print("red lorad N: ",num_lorad)
+        if num_lorad == 1:
+            x_random = int(random.uniform(self.RED_BOX_ABS[0] + self.LORAD_N_BOX_REL[0],
+                                          self.RED_BOX_ABS[0] + self.LORAD_N_BOX_REL[0] + self.LORAD_BOX_WIDTH))
+            y_random = int(random.uniform(self.RED_BOX_ABS[1] + self.LORAD_N_BOX_REL[1],
+                                          self.RED_BOX_ABS[1] + self.LORAD_N_BOX_REL[1] + self.LORAD_BOX_HEIGHT))
+            red_lorad = SAM_AAA((x_random,y_random),0,250,"lorad",80,"red")
+            self.red_sams.append(red_lorad)
+
+        # red lorad S random locations (between 0 and 1)
+        num_lorad = round(random.uniform(0,1))
+        print("red lorad S: ",num_lorad)
+        if num_lorad == 1:
+            x_random = int(random.uniform(self.RED_BOX_ABS[0] + self.LORAD_S_BOX_REL[0],
+                                          self.RED_BOX_ABS[0] + self.LORAD_S_BOX_REL[0] + self.LORAD_BOX_WIDTH))
+            y_random = int(random.uniform(self.RED_BOX_ABS[1] + self.LORAD_S_BOX_REL[1],
+                                          self.RED_BOX_ABS[1] + self.LORAD_S_BOX_REL[1] + self.LORAD_BOX_HEIGHT))
+            red_lorad = SAM_AAA((x_random,y_random),0,180,"lorad",80,"red")
+            self.red_sams.append(red_lorad)
+
+    
+    def create_threatre_mesh(self) -> None:
+        
+        points = []
+        
+        points1 = ([unit.location for unit in self.blue_airfields])
+        points2 = ([unit.location for unit in self.blue_factories])
+        points3 = ([unit.location for unit in self.blue_sams])
+        points4 = ([unit.location for unit in self.blue_vehicles])
+        points5 = ([unit.location for unit in self.blue_all])
+    
+        points = points1 + points2 + points3 + points4
+        print("points: ",points)
+        print("all points: ",points5)
+        
+        
+            
+        polygon1 = Polygon(points)
+        x,y = polygon1.exterior.xy
+        plt.plot(x,y)
+
+        bounds = polygon1.bounds
+        print("bounds: ",bounds)
+        buffer = polygon1.buffer(100)
+        a,b = buffer.exterior.xy
+        plt.plot(a,b)
+        
+        box1 = box(*bounds)
+        a,b = box1.exterior.xy
+        plt.plot(a,b)
+        buffer1 = box1.buffer(100)
+        a,b = buffer1.exterior.xy
+        plt.plot(a,b)
+        
+        plt.show()
+    
+    
+    def draw_theatre(self,helper_boxes:bool) -> None:
+        # draw helper boxes
+        if helper_boxes:
+            self.draw_helper_boxes()
+        # blue vehicles
+        for vehicle in self.blue_vehicles:
+            plt.scatter(vehicle.location[0],vehicle.location[1],color=self.LIGHTBLUE,s=100,marker="o")
+        # blue factories
+        for factory in self.blue_factories:
+            plt.scatter(factory.location[0],factory.location[1],color="blue",s=100,marker="H")
+        # red vehicles
+        for vehicle in self.red_vehicles:
+            plt.scatter(vehicle.location[0],vehicle.location[1],color=self.LIGHTRED,s=100,marker="o")
+        # red factories
+        for factory in self.red_factories:
+            plt.scatter(factory.location[0],factory.location[1],color="red",s=100,marker="H")
+        # blue sams
+        for sam in self.blue_sams:
+            plt.scatter(sam.location[0],sam.location[1],color=self.LIGHTBLUE,s=100,marker="o")
+            circle = plt.Circle(sam.location,sam.radius,color="blue",lw=0.5,fill=False)
+            self.axes.add_patch(circle)
+        # red sams
+        for sam in self.red_sams:
+            plt.scatter(sam.location[0],sam.location[1],color=self.LIGHTRED,s=100,marker="o")
+            circle = plt.Circle(sam.location,sam.radius,color="red",lw=0.5,fill=False)
+            self.axes.add_patch(circle)
+        # blue airfields
+        for airfield in self.blue_airfields:
+            plt.scatter(airfield.location[0],airfield.location[1],color="blue",s=100,marker="s")
+        # red airfields
+        for airfield in self.red_airfields:
+            plt.scatter(airfield.location[0],airfield.location[1],color="red",s=100,marker="D")
+    
+        plt.show()
+    
+    
+    def draw_helper_boxes(self) -> None:
+        # blue box
+        x_data = [self.BLUE_BOX_ABS[0],
+                  self.BLUE_BOX_ABS[0],
+                  self.BLUE_BOX_ABS[0] + self.BLUE_BOX_WIDTH,
+                  self.BLUE_BOX_ABS[0] + self.BLUE_BOX_WIDTH,
+                  self.BLUE_BOX_ABS[0]]
+        y_data = [self.BLUE_BOX_ABS[1],
+                  self.BLUE_BOX_ABS[1] + self.BLUE_BOX_HEIGHT,
+                  self.BLUE_BOX_ABS[1] + self.BLUE_BOX_HEIGHT,
+                  self.BLUE_BOX_ABS[1],
+                  self.BLUE_BOX_ABS[1]]
+        plt.plot(x_data,y_data,"b--",lw=0.5)
+        # blue airfield box
+        x_data = [self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0],
+                  self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0],
+                  self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0] + self.AIRFIELD_BOX_WIDTH,
+                  self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0] + self.AIRFIELD_BOX_WIDTH,
+                  self.BLUE_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0]]
+        y_data = [self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1],
+                  self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1] + self.AIRFIELD_BOX_HEIGHT,
+                  self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1] + self.AIRFIELD_BOX_HEIGHT,
+                  self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1],
+                  self.BLUE_BOX_ABS[1] + self.AIRFIELD_BOX_REL[1]]
+        plt.plot(x_data,y_data,"b--",lw=0.5)
+        # blue lorad N box
+        x_data = [self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0],
+                  self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0],
+                  self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0] + self.LORAD_BOX_WIDTH,
+                  self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0] + self.LORAD_BOX_WIDTH,
+                  self.BLUE_BOX_ABS[0] + self.LORAD_N_BOX_REL[0]]
+        y_data = [self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1],
+                  self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1] + self.LORAD_BOX_HEIGHT,
+                  self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1] + self.LORAD_BOX_HEIGHT,
+                  self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1],
+                  self.BLUE_BOX_ABS[1] + self.LORAD_N_BOX_REL[1]]
+        plt.plot(x_data,y_data,"b--",lw=0.5)
+        # blue lorad S box
+        x_data = [self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0],
+                  self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0],
+                  self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0] + self.LORAD_BOX_WIDTH,
+                  self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0] + self.LORAD_BOX_WIDTH,
+                  self.BLUE_BOX_ABS[0] + self.LORAD_S_BOX_REL[0]]
+        y_data = [self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1],
+                  self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1] + self.LORAD_BOX_HEIGHT,
+                  self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1] + self.LORAD_BOX_HEIGHT,
+                  self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1],
+                  self.BLUE_BOX_ABS[1] + self.LORAD_S_BOX_REL[1]]
+        plt.plot(x_data,y_data,"b--",lw=0.5)
+        # red box
+        x_data = [self.RED_BOX_ABS[0],
+                  self.RED_BOX_ABS[0],
+                  self.RED_BOX_ABS[0] + self.RED_BOX_WIDTH,
+                  self.RED_BOX_ABS[0] + self.RED_BOX_WIDTH,
+                  self.RED_BOX_ABS[0]]
+        y_data = [self.RED_BOX_ABS[1],
+                  self.RED_BOX_ABS[1] + self.RED_BOX_HEIGHT,
+                  self.RED_BOX_ABS[1] + self.RED_BOX_HEIGHT,
+                  self.RED_BOX_ABS[1],
+                  self.RED_BOX_ABS[1]]
+        plt.plot(x_data,y_data,"r--",lw=0.5)
         # red airfield box
         x_data = [self.RED_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0],
                   self.RED_BOX_ABS[0] + self.AIRFIELD_BOX_REL[0],
@@ -283,18 +352,6 @@ class Theatre:
                   self.RED_BOX_ABS[1] + self.LORAD_N_BOX_REL[1],
                   self.RED_BOX_ABS[1] + self.LORAD_N_BOX_REL[1]]
         plt.plot(x_data,y_data,"r--",lw=0.5)
-
-        # red lorad N random locations (between 1 and 1)
-        num_lorad = round(random.uniform(1,1))
-        print("red lorad N: ",num_lorad)
-        if num_lorad == 1:
-            x_random = int(random.uniform(self.RED_BOX_ABS[0] + self.LORAD_N_BOX_REL[0],
-                                          self.RED_BOX_ABS[0] + self.LORAD_N_BOX_REL[0] + self.LORAD_BOX_WIDTH))
-            y_random = int(random.uniform(self.RED_BOX_ABS[1] + self.LORAD_N_BOX_REL[1],
-                                          self.RED_BOX_ABS[1] + self.LORAD_N_BOX_REL[1] + self.LORAD_BOX_HEIGHT))
-            red_lorad = SAM_AAA((x_random,y_random),0,250,"lorad",80,"red")
-            self.red_sams.append(red_lorad)
-
         # red lorad S box
         x_data = [self.RED_BOX_ABS[0] + self.LORAD_S_BOX_REL[0],
                   self.RED_BOX_ABS[0] + self.LORAD_S_BOX_REL[0],
@@ -307,50 +364,9 @@ class Theatre:
                   self.RED_BOX_ABS[1] + self.LORAD_S_BOX_REL[1],
                   self.RED_BOX_ABS[1] + self.LORAD_S_BOX_REL[1]]
         plt.plot(x_data,y_data,"r--",lw=0.5)
-
-        # red lorad S random locations (between 0 and 1)
-        num_lorad = round(random.uniform(0,1))
-        print("red lorad S: ",num_lorad)
-        if num_lorad == 1:
-            x_random = int(random.uniform(self.RED_BOX_ABS[0] + self.LORAD_S_BOX_REL[0],
-                                          self.RED_BOX_ABS[0] + self.LORAD_S_BOX_REL[0] + self.LORAD_BOX_WIDTH))
-            y_random = int(random.uniform(self.RED_BOX_ABS[1] + self.LORAD_S_BOX_REL[1],
-                                          self.RED_BOX_ABS[1] + self.LORAD_S_BOX_REL[1] + self.LORAD_BOX_HEIGHT))
-            red_lorad = SAM_AAA((x_random,y_random),0,180,"lorad",80,"red")
-            self.red_sams.append(red_lorad)
-
         
-        #plt.show()
         
-    
-    def create_threatre_mesh(self) -> None:
-        pass
-    
-    def draw_theatre(self) -> None:
-        for vehicle in self.blue_vehicles:
-            plt.scatter(vehicle.location[0],vehicle.location[1],color=self.LIGHTBLUE,s=100,marker="o")
-        for factory in self.blue_factories:
-            plt.scatter(factory.location[0],factory.location[1],color="blue",s=100,marker="H")
-        for vehicle in self.red_vehicles:
-            plt.scatter(vehicle.location[0],vehicle.location[1],color=self.LIGHTRED,s=100,marker="o")
-        for factory in self.red_factories:
-            plt.scatter(factory.location[0],factory.location[1],color="red",s=100,marker="H")
-        for sam in self.blue_sams:
-            plt.scatter(sam.location[0],sam.location[1],color=self.LIGHTBLUE,s=100,marker="o")
-            circle = plt.Circle(sam.location,sam.radius,color="blue",lw=0.5,fill=False)
-            self.axes.add_patch(circle)
-        for sam in self.red_sams:
-            plt.scatter(sam.location[0],sam.location[1],color=self.LIGHTRED,s=100,marker="o")
-            circle = plt.Circle(sam.location,sam.radius,color="red",lw=0.5,fill=False)
-            self.axes.add_patch(circle)
-        for airfield in self.blue_airfields:
-            plt.scatter(airfield.location[0],airfield.location[1],color="blue",s=100,marker="s")
-        #for cv in self.blue_cvs:
-        #    plt.scatter(cv.location[0],cv.location[1],color="blue",s=100,marker="o")
-        for airfield in self.red_airfields:
-            plt.scatter(airfield.location[0],airfield.location[1],color="red",s=100,marker="D")
-    
-        plt.show()
+
     
     
     

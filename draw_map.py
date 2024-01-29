@@ -119,7 +119,7 @@ class RoutingMap_pygame:
         self.draw_tree(randomtree)
         pygame.display.update()
         pygame.event.clear()
-        time.sleep(0.5)
+        time.sleep(1.0)
 
 
 
