@@ -20,7 +20,7 @@ def main():
     # (min,max) radius
     obstacleradius = (50,200)
     # Astar algorithm stepsize (must align with start and goal)
-    stepsize = 20
+    stepsize = 50
     
     
     riskzones = make_circle_riskzones(mapdimensions,

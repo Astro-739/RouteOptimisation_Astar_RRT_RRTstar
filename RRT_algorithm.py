@@ -23,7 +23,7 @@ class RRTAlgorithm:
         self.goalpath.nodes.append(self.startnode)
         self.goalpathLOS = TreePath(start_location)
         # algorithm settings
-        self.STEPSIZE = 20               # ? option as optional parameter in function
+        self.STEPSIZE = 40               # ? option as optional parameter in function
         self.GOALRADIUS = 15
         self.SAFETYMARGIN = 2           # extra clearance distance from obstacle
         self.goalfound = False               
