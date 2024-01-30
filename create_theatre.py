@@ -3,7 +3,7 @@ import math
 from shapely.geometry import Point,Polygon,LineString,MultiPoint
 from shapely.geometry import box
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 
 class Theatre:
@@ -255,6 +255,7 @@ class Theatre:
         # draw helper boxes
         if helper_boxes:
             self.draw_helper_boxes()
+        # draw units on map
         # blue vehicles
         for vehicle in self.blue_vehicles:
             plt.scatter(vehicle.location[0],vehicle.location[1],color=self.LIGHTBLUE,s=100,marker="o")
@@ -284,30 +285,71 @@ class Theatre:
         for airfield in self.red_airfields:
             plt.scatter(airfield.location[0],airfield.location[1],color="red",s=100,marker="D")
     
-        # centroid points
+        # locations
         blue_points = ([unit.location for unit in self.blue_all])
         blue_values = ([unit.value for unit in self.blue_all])
         red_points = ([unit.location for unit in self.red_all])
+        red_values = ([unit.value for unit in self.red_all])
         
-        blue_centroid = (MultiPoint(blue_points).convex_hull).centroid
-        red_centroid = (MultiPoint(red_points).convex_hull).centroid
+        # convex hull
+        blue_hull = MultiPoint(blue_points).convex_hull
+        red_hull = MultiPoint(red_points).convex_hull
+        x,y = blue_hull.exterior.xy
+        plt.plot(x,y,"b--",lw=0.5)
+        x,y = red_hull.exterior.xy
+        plt.plot(x,y,"r--",lw=0.5)
         
+        # centroid points
+        blue_centroid = blue_hull.centroid
+        red_centroid = red_hull.centroid
         plt.scatter(blue_centroid.x,blue_centroid.y,color="purple",s=200,marker="*")
         plt.scatter(red_centroid.x,red_centroid.y,color="purple",s=200,marker="*")
         
         
-        # gravity points
+        # centre of gravity points
         blue_cg_x = sum([point[0] for point in blue_points]) / len(blue_points)
         blue_cg_y = sum([point[1] for point in blue_points]) / len(blue_points)        
         print("blue_cg: ",(blue_cg_x,blue_cg_y))
         plt.scatter(blue_cg_x,blue_cg_y,color="blue",s=200,marker="*")
+
+        blue_wcg_x = sum([unit.location[0]*unit.value for unit in self.blue_all]) / sum(blue_values)
+        blue_wcg_y = sum([unit.location[1]*unit.value for unit in self.blue_all]) / sum(blue_values)
+        print("blue weighted cg: ",(blue_wcg_x,blue_wcg_y))
+        plt.scatter(blue_wcg_x,blue_wcg_y,color="blue",s=200,marker="*")
         
         red_cg_x = sum([point[0] for point in red_points]) / len(red_points)
         red_cg_y = sum([point[1] for point in red_points]) / len(red_points)        
-        print("blue_cg: ",(red_cg_x,red_cg_y))
+        print("red_cg: ",(red_cg_x,red_cg_y))
         plt.scatter(red_cg_x,red_cg_y,color="red",s=200,marker="*")
         
+        red_wcg_x = sum([unit.location[0]*unit.value for unit in self.red_all]) / sum(red_values)
+        red_wcg_y = sum([unit.location[1]*unit.value for unit in self.red_all]) / sum(red_values)
+        print("blue weighted cg: ",(blue_wcg_x,blue_wcg_y))
+        plt.scatter(red_wcg_x,red_wcg_y,color="red",s=200,marker="*")
         
+
+        # connecting cgs
+        
+        
+        blue_wcg = np.array([blue_wcg_x,blue_wcg_y])
+        red_wcg = np.array([red_wcg_x,red_wcg_y])
+        point = np.array([blue_points[0]])
+
+        print("point: ",point)
+
+        dist = np.cross(red_wcg - blue_wcg,point-blue_wcg)/np.linalg.norm(red_wcg - blue_wcg)
+        print("dist: ",dist)
+
+        """# examples
+        d = norm(np.cross(p2-p1, p1-p3))/norm(p2-p1)
+
+        p1=np.array([0,0])
+        p2=np.array([10,10])
+        p3=np.array([5,7])
+        d=np.cross(p2-p1,p3-p1)/np.linalg.norm(p2-p1)
+        """
+
+
         plt.show()
     
     
