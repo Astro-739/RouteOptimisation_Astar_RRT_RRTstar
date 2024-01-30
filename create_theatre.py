@@ -1,6 +1,6 @@
 import random
 import math
-from shapely.geometry import Point,Polygon,LineString
+from shapely.geometry import Point,Polygon,LineString,MultiPoint
 from shapely.geometry import box
 import matplotlib.pyplot as plt
 
@@ -227,6 +227,16 @@ class Theatre:
         buffer1 = box1.buffer(100)
         a,b = buffer1.exterior.xy
         plt.plot(a,b)
+        
+        
+        hull = MultiPoint([unit.location for unit in self.blue_all]).convex_hull
+        print("hull: ",hull)
+        x,y = hull.exterior.xy
+        plt.plot(x,y)
+        buffer = hull.buffer(50)
+        a,b = buffer.exterior.xy
+        plt.plot(a,b)
+        
         
         plt.show()
     
