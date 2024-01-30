@@ -35,7 +35,7 @@ class Theatre:
         self.RED_AIRFIELD_BOX_REL = (25,50)
         self.RED_AIRFIELD_BOX_HEIGHT = 200
         self.RED_AIRFIELD_BOX_WIDTH = 150
-        self.BLUE_LORAD_N_BOX_REL = (75,175)
+        self.BLUE_LORAD_N_BOX_REL = (75,125)
         self.BLUE_LORAD_S_BOX_REL = (75,75)
         self.RED_LORAD_N_BOX_REL = (75,175)
         self.RED_LORAD_S_BOX_REL = (75,75)
@@ -83,7 +83,7 @@ class Theatre:
             self.blue_all.append(blue_factory)
 
         # blue merad
-        num_merad = round(random.uniform(2,5))
+        num_merad = round(random.uniform(4,6))
         print("blue merad: ",num_merad)
         for i in range(0,num_merad):
             x_random = int(random.uniform(self.BLUE_BOX_ABS[0],
