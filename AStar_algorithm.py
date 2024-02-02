@@ -163,6 +163,26 @@ class AStarAlgorithm:
             print(f"openlist items: {len(self.openlist)}")
             print(f"closedlist items: {len(self.closedlist)}")
 
+    # edge cost to get to point
+    # edge cost based on distance and multiplyer
+    # multiplyer is based on gridpoint location, all edges to point same multiplyer
+    def calc_edge_cost(self,node:GridNode) -> None:
+        node.edgecost = node.edgelength * node.riskmultiplyer
+
+    # total path predicted cost (f_cost = g_cost + h_cost)
+    def calc_f_cost(self,node:GridNode) -> None:
+        node.f_cost = node.g_cost + node.h_cost
+    
+    # path cost from start to current point
+    def calc_g_cost(self,node:GridNode,parentnode:GridNode) -> None:
+        node.g_cost = parentnode.g_cost + node.edgecost
+    
+    # heuristic for predicted path cost
+    def calc_h_cost(self,node:GridNode):
+        # diagonal distance h = D * ((dx + dy) + (sqrt(2) - 2) * min(dx, dy))
+        # using Euclidian distance for now (diagonal distance not very distinct in this grid)
+        node.h_cost = math.dist((node.location),(self.goal_location))
+    
     def create_grid(self) -> None:
         pass
     
@@ -222,31 +242,6 @@ class AStarAlgorithm:
             riskmultiplyer = 1
         # set riskmultiplyer
         node.riskmultiplyer = riskmultiplyer
-    
-    # edge cost to get to point
-    # edge cost based on distance and multiplyer
-    # multiplyer is based on gridpoint location, all edges to point same multiplyer
-    def calc_edge_cost(self,node:GridNode) -> None:
-        node.edgecost = node.edgelength * node.riskmultiplyer
-
-    # total path predicted cost (f_cost = g_cost + h_cost)
-    def calc_f_cost(self,node:GridNode) -> None:
-        node.f_cost = node.g_cost + node.h_cost
-    
-    # path cost from start to current point
-    def calc_g_cost(self,node:GridNode,parentnode:GridNode) -> None:
-        node.g_cost = parentnode.g_cost + node.edgecost
-    
-    # h = D * (dx + dy) + (sqrt(2) * D - 2 * D) * min(dx, dy)
-    # h = D * ((dx + dy) + (sqrt(2) - 2) * min(dx, dy))
-    def calc_h_cost(self,node:GridNode):
-        (x1,y1) = node.location
-        (x2,y2) = self.goal_location
-        #delta_x = abs(x2 - x1)
-        #delta_y = abs(y2 - y1)
-        #h_cost = ((delta_x + delta_y) + (math.sqrt(2) - 2) * min(delta_x,delta_y))
-        # using Euclidian distance for now (diagonal distance not very distinct in this grid)
-        node.h_cost = math.dist((x1,y1),(x2,y2)) 
     
     # assumption is if existing it is on either openlist or closedlist                
     def existing_gridnode(self,location:(int,int)) -> GridNode:
