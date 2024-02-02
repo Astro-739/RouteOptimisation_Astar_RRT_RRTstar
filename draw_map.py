@@ -126,13 +126,13 @@ class RoutingMap_pygame:
 class RoutingMap_matplotlib:
     def __init__(self,
                  start_xy:(int,int),
-                 goal_xy:(int,int),
+                 goal_locations:list[int],
                  mapdimensions:(int,int),
                  obstacles:list[CircleObstacle]
                  ) -> None:
         self.start_xy = start_xy
         self.start_x,self.start_y = start_xy
-        self.goal_x,self.goal_y = goal_xy
+        self.goal_locations = goal_locations
         self.mapdimensions = mapdimensions
         self.mapheight,self.mapwidth = self.mapdimensions
         self.obstacles = obstacles
@@ -153,9 +153,11 @@ class RoutingMap_matplotlib:
         fig,axes = plt.subplots(1,1,figsize=(10, 10))
         plt.xlim([0,self.mapwidth])
         plt.ylim([0,self.mapheight])
-        # plot start and goal location
+        # plot start location
         plt.scatter(self.start_x,self.start_y,color=self.GREEN,s=100,marker="o")
-        plt.scatter(self.goal_x,self.goal_y,color=self.GREEN,s=300,marker="o")
+        # plot goal locations
+        for goal_location in self.goal_locations:
+            plt.scatter(goal_location[0],goal_location[1],color=self.GREEN,s=300,marker="o")
         # plot circle obsticles
         for circle in self.obstacles:
             circle = plt.Circle(circle.location,circle.radius,
@@ -173,20 +175,19 @@ class RoutingMap_matplotlib:
                 plt.plot(x_data,y_data,color=self.GREY,lw=0.5)
                 
     #    
-    def draw_path(self,results:TreeResults,) -> None:
-        for goalnode in results.goalpath:
-            # for a path draw each node and connection to node parent 
-            node = goalnode
-            while node.location is not results.start_location:
-                plt.scatter(node.location[0],node.location[1],
-                            color=self.LIGHTBLUE,s=20,marker="o")
-                x_data = [node.location[0],node.parent.location[0]]
-                y_data = [node.location[1],node.parent.location[1]]
-                plt.plot(x_data,y_data,color=self.LIGHTBLUE,lw=0.5)
-                # next node
-                node = node.parent
-        # draw start location
-        #pygame.draw.circle(self.map,colour,results.start_location,self.NODERADIUS+3,0)
+    def draw_path(self,goalpaths) -> None:
+        for goalpath in goalpaths:        
+            for goalnode in goalpath:
+                # for a path draw each node and connection to node parent 
+                node = goalnode
+                while node.location is not self.start_xy:
+                    plt.scatter(node.location[0],node.location[1],
+                                color=self.LIGHTBLUE,s=20,marker="o")
+                    x_data = [node.location[0],node.parent.location[0]]
+                    y_data = [node.location[1],node.parent.location[1]]
+                    plt.plot(x_data,y_data,color=self.LIGHTBLUE,lw=0.5)
+                    # next node
+                    node = node.parent
 
     
     def draw_patLOS(self) -> None:
