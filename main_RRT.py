@@ -18,6 +18,8 @@ def main():
     num_obstacles = 8
     # (min,max) radius
     obstacleradius = (50,200)
+    # node stepsize
+    stepsize = 20
     
     update_map = True
     RRTstar = False
@@ -31,6 +33,7 @@ def main():
                        obstacles,
                        start_location,
                        goal_location,
+                       stepsize,
                        RRTstar)
     map = RoutingMap_pygame(start_location,
                             goal_location,
@@ -41,9 +44,7 @@ def main():
     pygame.display.update()
     print("map drawn")
  
-    calc_time = 0
     iteration = 0
-    time1 = time.time()  
     while iteration < 1000: #and not rrt.pathfound:
         
         if iteration % 50 == 0: 
@@ -57,15 +58,12 @@ def main():
                 map.update_map(rrt.randomtree)
         iteration +=1
 
-    time2 = time.time()
-    calc_time = time2 - time1
     num_nodes = len(rrt.randomtree.nodes)
     
     map.draw_tree(rrt.randomtree)
     pygame.display.update()
     print(f"final iteration: {iteration}")
     print(f"tree drawn with {num_nodes} nodes")
-    print("calctime (incl waits) =", (calc_time))
     
     if rrt.pathfound: 
         map.draw_path(rrt.finalresult,map.LIGHTBLUE,map.EDGETHICKNESS)

@@ -1,4 +1,3 @@
-import random
 import math
 from icecream import ic
 from route_opt_utils import TreeResults, TreeNode, TreePath
@@ -9,8 +8,14 @@ from route_opt_utils import is_freespace_circle, cross_circle_obstacle, nearest_
 
 # ----------------------------------------------------------
 class RRTAlgorithm:          
-    def __init__(self,mapdimensions:(int,int),obstacles:list,start_location:(int,int),
-                 goal_location:(int,int),RRTStar:bool) -> None:
+    def __init__(self,
+                 mapdimensions:(int,int),
+                 obstacles:list,
+                 start_location:(int,int),
+                 goal_location:(int,int),
+                 stepsize:(int),
+                 RRTStar:bool
+                 ) -> None:
         # map dimensions (note: y,x or height,width in pygame)
         self.mapdimensions = mapdimensions
         self.mapheight,self.mapwidth = self.mapdimensions
@@ -23,7 +28,7 @@ class RRTAlgorithm:
         self.goalpath.nodes.append(self.startnode)
         self.goalpathLOS = TreePath(start_location)
         # algorithm settings
-        self.STEPSIZE = 40               # ? option as optional parameter in function
+        self.STEPSIZE = stepsize
         self.GOALRADIUS = 15
         self.SAFETYMARGIN = 2           # extra clearance distance from obstacle
         self.goalfound = False               
