@@ -1,8 +1,8 @@
 import time
 import matplotlib.pyplot as plt
 from icecream import ic
-from AStar_algorithm_multi import AStarAlgorithm
-from draw_map_multi import RoutingMap_matplotlib
+from AStar_algorithm import AStarAlgorithm
+from draw_map import RoutingMap_matplotlib
 from create_obstacles import make_circle_riskzones
 
 
@@ -13,7 +13,6 @@ def main():
     # locations in (x,y)
     start_location = (100,100)
     goal_location = (800,700)
-    goal_locations = [(800,700),(600,200)]
     # number of obstacles
     num_obstacles = 12
     # (min,max) radius
@@ -25,14 +24,15 @@ def main():
                                       obstacleradius,
                                       num_obstacles)
     astar = AStarAlgorithm(start_location,
-                           goal_locations,
-                           riskzones,
-                           mapdimensions,
-                           stepsize)
+                            goal_location,
+                            riskzones,
+                            mapdimensions,
+                            stepsize)
+    
     map = RoutingMap_matplotlib(start_location,
-                                goal_locations,
-                                mapdimensions,
-                                riskzones)
+                                 goal_location,
+                                 mapdimensions,
+                                 riskzones)
     # draw map with start, goal and obstacles
     map.draw_basemap()
     print("map drawn")
@@ -45,11 +45,11 @@ def main():
     time2 = time.time()
     calc_time = time2 - time1    
     
-    #astar.finalresults.goalpath = astar.goalpath
+    astar.finalresults.goalpath = astar.goalpath
     numberofnodes = len(astar.gridnodes.nodes)
     
     map.draw_tree(astar.gridnodes)
-    map.draw_path(astar.goalpaths)
+    map.draw_path(astar.finalresults)
     
     print(f"tree drawn with {numberofnodes} nodes")
     print("calctime =", (calc_time))
