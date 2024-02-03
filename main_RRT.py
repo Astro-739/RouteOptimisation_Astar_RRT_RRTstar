@@ -2,7 +2,7 @@ import pygame
 import time
 from icecream import ic
 from RRT_algorithm import RRTAlgorithm
-from draw_single_map import RoutingMap_pygame,RoutingMap_matplotlib
+from draw_map_multi import RoutingMap_pygame,RoutingMap_matplotlib
 from create_obstacles import make_circle_obstacles
 
 

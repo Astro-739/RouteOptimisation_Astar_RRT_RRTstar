@@ -1,8 +1,8 @@
 import time
 import matplotlib.pyplot as plt
 from icecream import ic
-from AStar_single_algorithm import AStarAlgorithm
-from draw_single_map import RoutingMap_matplotlib
+from AStar_multi_algorithm import AStarAlgorithm
+from draw_map_multi import RoutingMap_matplotlib
 from create_obstacles import make_circle_riskzones
 
 
