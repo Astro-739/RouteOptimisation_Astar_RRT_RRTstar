@@ -204,7 +204,7 @@ class AStarAlgorithm:
     
     def check_goal_found(self,node:GridNode,goalnode_list:list[GridNode]) -> list[GridNode]:
         # radius goal found
-        GOALRADIUS = self.STEPSIZE
+        GOALRADIUS = 2 * self.STEPSIZE
         # check goal found for each goal location left on goalnode_list
         for goalnode in goalnode_list:
             dist = math.dist(node.location,goalnode.location)
