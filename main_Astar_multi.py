@@ -8,18 +8,17 @@ from create_obstacles import make_circle_riskzones
 
 
 def main():
-    # (height,width) in pygame
+    #  map width (x), map height (y)
     mapdimensions = (1000,1000)          
     # locations in (x,y)
     start_location = (100,100)
-    goal_location = (800,700)
-    goal_locations = [(800,700),(600,200)]
+    goal_locations = [(800,700),(600,200),(300,400),(200,800),(500,900)]
     # number of obstacles
     num_obstacles = 12
     # (min,max) radius
     obstacleradius = (50,200)
     # Astar algorithm stepsize (must align with start and goal)
-    stepsize = 50
+    stepsize = 25
     
     riskzones = make_circle_riskzones(mapdimensions,
                                       obstacleradius,
@@ -38,19 +37,15 @@ def main():
     print("map drawn")
  
     time1 = time.time()
-    
     astar.astar_search()
     astar.create_goalpath()
-    
     time2 = time.time()
-    calc_time = time2 - time1    
-    
-    #astar.finalresults.goalpath = astar.goalpath
-    numberofnodes = len(astar.gridnodes.nodes)
     
     map.draw_tree(astar.gridnodes)
     map.draw_path(astar.goalpaths)
     
+    numberofnodes = len(astar.gridnodes)
+    calc_time = time2 - time1
     print(f"tree drawn with {numberofnodes} nodes")
     print("calctime =", (calc_time))
     

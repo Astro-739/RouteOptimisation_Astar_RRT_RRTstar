@@ -20,9 +20,10 @@ class GridNode:
 
 
 class GridPath:
-    def __init__(self,location:(int,int)) -> None:
-        self.location = location
-        self.nodes = []            # includes startnode
+    def __init__(self,startnode:GridNode,goalnode:GridNode) -> None:
+        self.startnode = startnode
+        self.goalnode = goalnode
+        self.nodes = []            # includes startnode and goalnode
         self.path_f_cost = 0
 
 
@@ -46,26 +47,21 @@ class AStarAlgorithm:
         self.startnode.edgecost = 0.0
         self.startnode.g_cost = 0.0
         
-        self.gridnodes = GridPath(start_location)
-        self.gridnodes.nodes.append(self.startnode)
+        self.gridnodes = []
+        self.gridnodes.append(self.startnode)
 
         self.goalnodes = []
         for location in self.goal_locations:
             goalnode = GridNode(location)
             self.goalnodes.append(goalnode)
-            self.gridnodes.nodes.append(goalnode)
+            self.gridnodes.append(goalnode)
             
-        
         self.openlist = []
         self.closedlist = []
         
         self.goalfound = False
-        self.goals_found = 0
-        #self.goalpath = []
         self.goalpaths = []     #todo
                 
-        self.finalresults = TreeResults(start_location,self.goal_location)
-    
     def astar_search(self) -> None:
         # create startnode, goalnode
         # initialise openlist and closedlist
@@ -136,9 +132,6 @@ class AStarAlgorithm:
                 self.calc_g_cost(tempnode,qnode)
                 self.calc_h_cost(tempnode)
                 self.calc_f_cost(tempnode)
-                # check if goal found
-
-
                 # check for existing node on this location
                 # if node exists, it is on openlist or closedlist (in this implementation)
                 node = None
@@ -149,8 +142,8 @@ class AStarAlgorithm:
                 # if not existing, make new node
                 if node is None:
                     node = tempnode
-                    self.gridnodes.nodes.append(node)
-                    print(f"gridnode #{len(self.gridnodes.nodes)} added")
+                    self.gridnodes.append(node)
+                    print(f"gridnode #{len(self.gridnodes)} added")
                     new_children.append(node)
                 # update node if new or if existing and higher f_cost
                 node.parent = qnode
@@ -158,18 +151,17 @@ class AStarAlgorithm:
                 node.f_cost = tempnode.f_cost
                 node.g_cost = tempnode.g_cost
                 node.h_cost = tempnode.h_cost
-
-                for i in range(0,len(goalnode_list)):
-                    if node.location == goalnode_list[i].location:
-                        # goalnode gets all attributes from tempnode
-                        goalnode_list[i] = node
-                        goalnode_list.pop(i)
-                        self.goals_found += 1
-                if self.goals_found == len(self.goalnodes):
+                # check if goal found
+                for goalnode in goalnode_list:
+                    if node.location == goalnode.location:
+                        # goalnode gets all attributes from node
+                        goalnode = node
+                        # remove found goal from list
+                        goalnode_list.remove(goalnode)
+                # set goal found flag true when all goals found
+                if len(goalnode_list) == 0:
                     self.goalfound = True
                     print("all goals found")
-
-
             # put all new nodes on openlist
             for child in new_children:
                 self.openlist.append(child)
@@ -195,12 +187,10 @@ class AStarAlgorithm:
     def calc_g_cost(self,node:GridNode,parentnode:GridNode) -> None:
         node.g_cost = parentnode.g_cost + node.edgecost
     
-    # heuristic for predicted path cost
+    # multiple goal heuristic for predicted path cost
     def calc_h_cost(self,node:GridNode):
         # diagonal distance h = D * ((dx + dy) + (sqrt(2) - 2) * min(dx, dy))
         # using Euclidian distance for now (diagonal distance not very distinct in this grid)
-        #node.h_cost = math.dist((node.location),(self.goal_location))
-        # multiple goals
         node.h_cost = min([math.dist((node.location),(location)) for location in self.goal_locations])
     
     def create_grid(self) -> None:
@@ -265,7 +255,7 @@ class AStarAlgorithm:
     
     # assumption is if existing it is on either openlist or closedlist                
     def existing_gridnode(self,location:(int,int)) -> GridNode:
-        for gridnode in self.gridnodes.nodes:
+        for gridnode in self.gridnodes:
             if gridnode.location == location:
                 return gridnode
         return None
@@ -302,19 +292,18 @@ class AStarAlgorithm:
             return False
         # reconstructing the path backwards from goal using parents
         for goalnode in self.goalnodes:
+            goalpath = GridPath(self.startnode,goalnode)
+            goalpath.path_f_cost = goalnode.f_cost
             node = goalnode
-            ic(node)
-            goalpath = []
             while node is not self.startnode:
-                goalpath.insert(0,node)
+                goalpath.nodes.insert(0,node)
                 # previousnode moves 1 up the line through parent of node
                 previousnode = node.parent
                 # parent node moves 1 up the line
                 node = previousnode
             self.goalpaths.append(goalpath)
-                
-        # startnode is not added #todo still true?
-        print("goalpath generated")
+        # print results                
+        print(f"{len(self.goalpaths)} goalpaths generated")
         return True
         
         
