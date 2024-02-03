@@ -12,7 +12,7 @@ def main():
     mapdimensions = (1000,1000)          
     # locations in (x,y)
     start_location = (100,100)
-    goal_locations = [(800,700),(600,200),(300,400),(200,800),(500,900)]
+    goal_locations = [(800,700),(605,210),(305,408),(205,811),(503,905)]
     # number of obstacles
     num_obstacles = 12
     # (min,max) radius

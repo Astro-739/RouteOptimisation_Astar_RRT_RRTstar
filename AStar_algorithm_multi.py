@@ -16,7 +16,7 @@ class GridNode:
         self.lowriskzone_cnt = 0 
         self.mediumriskzone_cnt = 0 
         self.highriskzone_cnt = 0 
-        self.riskmultiplyer = 1
+        self.riskmultiplier = 1
 
 
 class GridPath:
@@ -60,7 +60,7 @@ class AStarAlgorithm:
         self.closedlist = []
         
         self.goalfound = False
-        self.goalpaths = []     #todo
+        self.goalpaths = []
                 
     def astar_search(self) -> None:
         # create startnode, goalnode
@@ -94,24 +94,40 @@ class AStarAlgorithm:
             self.openlist.sort(key=lambda x: x.f_cost)
             # qnode is node with lowest f_cost, pop from openlist
             qnode = self.openlist.pop(0)
-            # generate children, note: north in pygame is south, y-axis is positive down
+            # generate children
             new_gridpoints = []
             new_children = []
-            location_and_edge_north = (qnode.location[0], qnode.location[1] + self.STEPSIZE, self.STEPSIZE)
+            location_and_edge_north     = (qnode.location[0], 
+                                           qnode.location[1] + self.STEPSIZE, 
+                                           self.STEPSIZE)
             new_gridpoints.append(location_and_edge_north)
-            location_and_edge_northeast = (qnode.location[0] + self.STEPSIZE, qnode.location[1] + self.STEPSIZE, math.sqrt(2) * self.STEPSIZE)
+            location_and_edge_northeast = (qnode.location[0] + self.STEPSIZE, 
+                                           qnode.location[1] + self.STEPSIZE, 
+                                           math.sqrt(2) * self.STEPSIZE)
             new_gridpoints.append(location_and_edge_northeast)
-            location_and_edge_east = (qnode.location[0] + self.STEPSIZE, qnode.location[1], self.STEPSIZE)
+            location_and_edge_east      = (qnode.location[0] + self.STEPSIZE, 
+                                           qnode.location[1], 
+                                           self.STEPSIZE)
             new_gridpoints.append(location_and_edge_east)
-            location_and_edge_southeast = (qnode.location[0] + self.STEPSIZE, qnode.location[1] - self.STEPSIZE, math.sqrt(2) * self.STEPSIZE)
+            location_and_edge_southeast = (qnode.location[0] + self.STEPSIZE, 
+                                           qnode.location[1] - self.STEPSIZE, 
+                                           math.sqrt(2) * self.STEPSIZE)
             new_gridpoints.append(location_and_edge_southeast)
-            location_and_edge_south = (qnode.location[0], qnode.location[1] - self.STEPSIZE, self.STEPSIZE)
+            location_and_edge_south     = (qnode.location[0], 
+                                           qnode.location[1] - self.STEPSIZE, 
+                                           self.STEPSIZE)
             new_gridpoints.append(location_and_edge_south)
-            location_and_edge_southwest = (qnode.location[0] - self.STEPSIZE, qnode.location[1] - self.STEPSIZE, math.sqrt(2) * self.STEPSIZE)
+            location_and_edge_southwest = (qnode.location[0] - self.STEPSIZE, 
+                                           qnode.location[1] - self.STEPSIZE, 
+                                           math.sqrt(2) * self.STEPSIZE)
             new_gridpoints.append(location_and_edge_southwest)
-            location_and_edge_west = (qnode.location[0] - self.STEPSIZE, qnode.location[1], self.STEPSIZE)
+            location_and_edge_west      = (qnode.location[0] - self.STEPSIZE, 
+                                           qnode.location[1], 
+                                           self.STEPSIZE)
             new_gridpoints.append(location_and_edge_west)
-            location_and_edge_northwest = (qnode.location[0] - self.STEPSIZE, qnode.location[1] + self.STEPSIZE, math.sqrt(2) * self.STEPSIZE)
+            location_and_edge_northwest = (qnode.location[0] - self.STEPSIZE, 
+                                           qnode.location[1] + self.STEPSIZE, 
+                                           math.sqrt(2) * self.STEPSIZE)
             new_gridpoints.append(location_and_edge_northwest)
             
             for location_and_edge in new_gridpoints:
@@ -124,10 +140,10 @@ class AStarAlgorithm:
                 # create tempnode at gridpoint
                 tempnode = GridNode(new_location)
                 tempnode.edgelength = new_edge
-                # set riskzone count and multiplyer for tempnode
+                # set riskzone count and multiplier for tempnode
                 self.set_riskzone_count(tempnode)
-                self.set_riskmultiplyer(tempnode)
-                # calculate costs based on risk multiplyer
+                self.set_riskmultiplier(tempnode)
+                # calculate costs based on risk multiplier
                 self.calc_edge_cost(tempnode)
                 self.calc_g_cost(tempnode,qnode)
                 self.calc_h_cost(tempnode)
@@ -143,7 +159,7 @@ class AStarAlgorithm:
                 if node is None:
                     node = tempnode
                     self.gridnodes.append(node)
-                    print(f"gridnode #{len(self.gridnodes)} added")
+                    #print(f"gridnode #{len(self.gridnodes)} added")
                     new_children.append(node)
                 # update node if new or if existing and higher f_cost
                 node.parent = qnode
@@ -151,13 +167,8 @@ class AStarAlgorithm:
                 node.f_cost = tempnode.f_cost
                 node.g_cost = tempnode.g_cost
                 node.h_cost = tempnode.h_cost
-                # check if goal found
-                for goalnode in goalnode_list:
-                    if node.location == goalnode.location:
-                        # goalnode gets all attributes from node
-                        goalnode = node
-                        # remove found goal from list
-                        goalnode_list.remove(goalnode)
+                # check if goal found and update goalnode_list
+                goalnode_list = self.check_goal_found(node,goalnode_list)
                 # set goal found flag true when all goals found
                 if len(goalnode_list) == 0:
                     self.goalfound = True
@@ -167,17 +178,15 @@ class AStarAlgorithm:
                 self.openlist.append(child)
             # qnode goes to closedlist
             self.closedlist.append(qnode)
-            # print status
-            print(f"iteration: {iteration}")       
-            print(f"new_children: {len(new_children)}")
-            print(f"openlist items: {len(self.openlist)}")
-            print(f"closedlist items: {len(self.closedlist)}")
+        # print final status
+        print(f"final openlist items: {len(self.openlist)}")
+        print(f"final closedlist items: {len(self.closedlist)}")
 
     # edge cost to get to point
-    # edge cost based on distance and multiplyer
-    # multiplyer is based on gridpoint location, all edges to point same multiplyer
+    # edge cost based on distance and multiplier
+    # multiplier is based on gridpoint location, all edges to point same multiplier
     def calc_edge_cost(self,node:GridNode) -> None:
-        node.edgecost = node.edgelength * node.riskmultiplyer
+        node.edgecost = node.edgelength * node.riskmultiplier
 
     # total path predicted cost (f_cost = g_cost + h_cost)
     def calc_f_cost(self,node:GridNode) -> None:
@@ -193,6 +202,36 @@ class AStarAlgorithm:
         # using Euclidian distance for now (diagonal distance not very distinct in this grid)
         node.h_cost = min([math.dist((node.location),(location)) for location in self.goal_locations])
     
+    def check_goal_found(self,node:GridNode,goalnode_list:list[GridNode]) -> list[GridNode]:
+        # radius goal found
+        GOALRADIUS = self.STEPSIZE
+        # check goal found for each goal location left on goalnode_list
+        for goalnode in goalnode_list:
+            dist = math.dist(node.location,goalnode.location)
+            # goal found when node is closer than stepsize from goalnode
+            if dist > 0 and dist < GOALRADIUS:
+                # node becomes parent of goalnode
+                goalnode.parent = node
+                goalnode.edgelength = dist
+                # set riskzone count and multiplier for goalnode
+                self.set_riskzone_count(goalnode)
+                self.set_riskmultiplier(goalnode)
+                # calculate costs based on risk multiplier
+                self.calc_edge_cost(goalnode)
+                self.calc_g_cost(goalnode,node)
+                goalnode.h_cost = 0
+                self.calc_f_cost(goalnode)
+                # remove found goal from list
+                goalnode_list.remove(goalnode)
+            # case for when node is exactly on goalnode location
+            if dist == 0: 
+                # goalnode gets all attributes from node
+                goalnode = node
+                # remove found goal from list
+                goalnode_list.remove(goalnode)
+        # return updated goalnode_list
+        return goalnode_list
+
     def create_grid(self) -> None:
         pass
     
@@ -233,25 +272,25 @@ class AStarAlgorithm:
         node.mediumriskzone_cnt = mediumrisk_cnt
         node.highriskzone_cnt = highrisk_cnt
 
-    def set_riskmultiplyer(self,node:GridNode) -> None:
+    def set_riskmultiplier(self,node:GridNode) -> None:
         # initialise
-        riskmultiplyer = 0
+        riskmultiplier = 0
         # risk values
         LOWRISK_VALUE = 3
         MEDIUMRISK_VALUE = 5
         HIGHRISK_VALUE = 10
-        # determine riskmultiplyer
+        # determine riskmultiplier
         if node.lowriskzone_cnt > 0:
-            riskmultiplyer = riskmultiplyer + LOWRISK_VALUE + (node.lowriskzone_cnt - 1)
+            riskmultiplier = riskmultiplier + LOWRISK_VALUE + (node.lowriskzone_cnt - 1)
         if node.mediumriskzone_cnt > 0:
-            riskmultiplyer = riskmultiplyer + MEDIUMRISK_VALUE + (node.mediumriskzone_cnt - 1)
+            riskmultiplier = riskmultiplier + MEDIUMRISK_VALUE + (node.mediumriskzone_cnt - 1)
         if node.highriskzone_cnt > 0:
-            riskmultiplyer = riskmultiplyer + HIGHRISK_VALUE + (node.highriskzone_cnt - 1)
+            riskmultiplier = riskmultiplier + HIGHRISK_VALUE + (node.highriskzone_cnt - 1)
         # default value is 1
-        if riskmultiplyer == 0:
-            riskmultiplyer = 1
-        # set riskmultiplyer
-        node.riskmultiplyer = riskmultiplyer
+        if riskmultiplier == 0:
+            riskmultiplier = 1
+        # set riskmultiplier
+        node.riskmultiplier = riskmultiplier
     
     # assumption is if existing it is on either openlist or closedlist                
     def existing_gridnode(self,location:(int,int)) -> GridNode:
