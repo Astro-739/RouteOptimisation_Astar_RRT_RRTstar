@@ -1,6 +1,6 @@
 import math
 from icecream import ic
-from route_opt_utils import TreeResults, CircleObstacle
+from route_opt_utils import CircleObstacle
 
 
 
@@ -13,9 +13,12 @@ class GridNode:
         self.f_cost = 100000.0 
         self.g_cost = 100000.0 
         self.h_cost = 100000.0 
-        self.lowriskzone_cnt = 0 
-        self.mediumriskzone_cnt = 0 
-        self.highriskzone_cnt = 0 
+        self.lowriskzone_cnt = 0
+        self.lowriskzones = []
+        self.mediumriskzone_cnt = 0
+        self.mediumriskzones = []
+        self.highriskzone_cnt = 0
+        self.highriskzones = []
         self.riskmultiplier = 1
 
 
@@ -23,9 +26,8 @@ class GridPath:
     def __init__(self,startnode:GridNode,goalnode:GridNode) -> None:
         self.startnode = startnode
         self.goalnode = goalnode
-        self.nodes = []            # includes startnode and goalnode
+        self.nodes = []
         self.path_f_cost = 0
-
 
 
 class AStarAlgorithm:
@@ -38,30 +40,31 @@ class AStarAlgorithm:
                  ) -> None:
         self.start_location = start_location
         self.goal_locations = goal_locations
-        self.goal_location = goal_locations[0]
         self.obstacles = obstacles
         self.mapheight,self.mapwidth = mapdimensions
         self.STEPSIZE = stepsize
-    
+        # init node lists
+        self.openlist = []
+        self.closedlist = []
+        self.gridnodes = []
+        self.goalpaths = []
+        self.goalfound = False
+        # init startnode
         self.startnode = GridNode(self.start_location)
         self.startnode.edgecost = 0.0
         self.startnode.g_cost = 0.0
-        
-        self.gridnodes = []
+        self.set_riskzone_count(self.startnode)
+        self.set_riskmultiplier(self.startnode)
         self.gridnodes.append(self.startnode)
-
+        # init goalnodes
         self.goalnodes = []
         for location in self.goal_locations:
             goalnode = GridNode(location)
+            self.set_riskzone_count(goalnode)
+            self.set_riskmultiplier(goalnode)
             self.goalnodes.append(goalnode)
             self.gridnodes.append(goalnode)
             
-        self.openlist = []
-        self.closedlist = []
-        
-        self.goalfound = False
-        self.goalpaths = []
-                
     def astar_search(self) -> None:
         # create startnode, goalnode
         # initialise openlist and closedlist
@@ -94,7 +97,7 @@ class AStarAlgorithm:
             self.openlist.sort(key=lambda x: x.f_cost)
             # qnode is node with lowest f_cost, pop from openlist
             qnode = self.openlist.pop(0)
-            # generate children
+            # generate new gridpoints in all 8 directions N,NE,E,SE,S,SW,W,NW
             new_gridpoints = []
             new_children = []
             location_and_edge_north     = (qnode.location[0], 
@@ -129,7 +132,10 @@ class AStarAlgorithm:
                                            qnode.location[1] + self.STEPSIZE, 
                                            math.sqrt(2) * self.STEPSIZE)
             new_gridpoints.append(location_and_edge_northwest)
-            
+            # for new gridpoints check if node already exists on location
+            # check if existing node needs updates
+            # or create new node if no node exists
+            # check if goal found at new location
             for location_and_edge in new_gridpoints:
                 # new location and edge of gridpoint
                 new_location = (location_and_edge[0],location_and_edge[1])
@@ -159,7 +165,6 @@ class AStarAlgorithm:
                 if node is None:
                     node = tempnode
                     self.gridnodes.append(node)
-                    #print(f"gridnode #{len(self.gridnodes)} added")
                     new_children.append(node)
                 # update node if new or if existing and higher f_cost
                 node.parent = qnode
@@ -200,7 +205,7 @@ class AStarAlgorithm:
     def calc_h_cost(self,node:GridNode):
         # diagonal distance h = D * ((dx + dy) + (sqrt(2) - 2) * min(dx, dy))
         # using Euclidian distance for now (diagonal distance not very distinct in this grid)
-        node.h_cost = min([math.dist((node.location),(location)) for location in self.goal_locations])
+        node.h_cost = min([math.dist(node.location,location) for location in self.goal_locations])
     
     def check_goal_found(self,node:GridNode,goalnode_list:list[GridNode]) -> list[GridNode]:
         # radius goal found
@@ -208,15 +213,12 @@ class AStarAlgorithm:
         # check goal found for each goal location left on goalnode_list
         for goalnode in goalnode_list:
             dist = math.dist(node.location,goalnode.location)
-            # goal found when node is closer than stepsize from goalnode
+            # goal found when node is closer than goalradius from goalnode
             if dist > 0 and dist < GOALRADIUS:
                 # node becomes parent of goalnode
                 goalnode.parent = node
                 goalnode.edgelength = dist
-                # set riskzone count and multiplier for goalnode
-                self.set_riskzone_count(goalnode)
-                self.set_riskmultiplier(goalnode)
-                # calculate costs based on risk multiplier
+                # calculate costs for goalnode based on risk multiplier
                 self.calc_edge_cost(goalnode)
                 self.calc_g_cost(goalnode,node)
                 goalnode.h_cost = 0
@@ -243,8 +245,6 @@ class AStarAlgorithm:
         lowrisk_cnt = 0
         mediumrisk_cnt = 0
         highrisk_cnt = 0
-        x_map = node.location[0]
-        y_map = node.location[1]
         # risk range settings
         LOWRISK_RANGE = 1.0
         MEDIUMRISK_RANGE = 0.8
@@ -252,20 +252,23 @@ class AStarAlgorithm:
         # check for all obstacles
         for riskzone in self.obstacles:
             # distance between node location and centre of circle
-            dist = math.dist((x_map,y_map),(riskzone.location))
+            dist = math.dist(node.location,riskzone.location)
             # if outside cirle, continue
             if dist > riskzone.radius:
                 continue
             # if in highrisk zone
             if dist < HIGHRISK_RANGE * riskzone.radius:
+                node.highriskzones.append(riskzone)
                 highrisk_cnt += 1
                 continue
             # if in mediumrisk zone
             if dist < MEDIUMRISK_RANGE * riskzone.radius:
+                node.mediumriskzones.append(riskzone)
                 mediumrisk_cnt += 1
                 continue
             # else in lowrisk zone
             else:
+                node.lowriskzones.append(riskzone)
                 lowrisk_cnt += 1
         # set risk count
         node.lowriskzone_cnt = lowrisk_cnt
@@ -302,13 +305,10 @@ class AStarAlgorithm:
     # check if node is in free space or within circle obstacle
     def is_freespace(self,location:(int,int)) -> bool:
         MARGIN = 0
-        x_map = location[0]
-        y_map = location[1]
         # check for all obstacles
         for riskzone in self.obstacles:
             # collision when point is within circle radius + margin
-            if (math.dist((x_map,y_map),(riskzone.location)) 
-                <= (riskzone.range + MARGIN)):
+            if math.dist(location,riskzone.location) <= (riskzone.range + MARGIN):
                 return False
         # no collision detected
         return True

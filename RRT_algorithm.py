@@ -258,7 +258,7 @@ class RRTAlgorithm:
                 node.memberofpath = True
 
 
-    # reconstructing the goal LOS path with base at goal location
+    # reconstructing the goal Line of Sight (LOS) path with base at goal location
     # checking for LOS from start to goal and moving base to farthest LOS node
     def pathToGoalLOS(self,latestgoalnode:TreeNode) -> bool:
     # smooth final path using Line of Sight algorithm
@@ -282,7 +282,7 @@ class RRTAlgorithm:
                 # node and LOS basenode become each others parent and child
                 LOSbasenode.pathLOS_parent = newLOSnode
                 newLOSnode.pathLOS_child = LOSbasenode
-                # newLOSnode become next LOSbasenode
+                # newLOSnode becomes next LOSbasenode
                 LOSbasenode = newLOSnode
                 # LOS checks again from start
                 node = self.startnode
