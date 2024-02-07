@@ -6,7 +6,6 @@ from route_opt_utils import is_freespace_circle, cross_circle_obstacle, nearest_
 
 
 
-# ----------------------------------------------------------
 class RRTAlgorithm:          
     def __init__(self,
                  mapdimensions:(int,int),
@@ -72,7 +71,7 @@ class RRTAlgorithm:
         node.node_cost = node_distance(node,parentnode)
         # set path cost to this node
         path_cost = node.node_cost
-        tempnode = node
+        tempnode:TreeNode = node
         while tempnode is not self.startnode:
             path_cost = path_cost + tempnode.parent.node_cost
             tempnode = tempnode.parent
@@ -87,7 +86,7 @@ class RRTAlgorithm:
     # determine cost of LOS path and LOS nodes
     def pathCostLOS(self,goalnode:TreeNode) -> None:
         # set node cost
-        LOSnode = goalnode
+        LOSnode:TreeNode = goalnode
         while LOSnode.location is not self.startnode.location:
             LOSnode.nodeLOS_cost = int(node_distance(LOSnode,LOSnode.pathLOS_parent))
             print("LOSnode_cost: ",LOSnode.nodeLOS_cost)
@@ -108,7 +107,7 @@ class RRTAlgorithm:
         return radius
 
     # RRT* - find all nodes in own neighbourhood
-    def neighbourhoodNodes(self,node:TreeNode) -> list:
+    def neighbourhoodNodes(self,node:TreeNode) -> list[TreeNode]:
         # initialise
         neighbourhoodradius = self.neighbourhoodRadius()
         neighbourhood = []
@@ -125,8 +124,9 @@ class RRTAlgorithm:
     #todo check crossobstacle for neighbour??
     def lowestCostNeighbour(self,node:TreeNode,nearestnode:TreeNode) -> TreeNode:
         # initialise
-        lowestcostneighbour = nearestnode
+        lowestcostneighbour:TreeNode = nearestnode
         pathcost_min = self.mapheight + self.mapwidth
+        neighbournode:TreeNode
         # determine neighbourhood size and nodes within neighbourhood
         self.neighbourhoodNodes(node)
         # find lowest cost neighbour
@@ -139,10 +139,11 @@ class RRTAlgorithm:
         return lowestcostneighbour
             
     # RRT* - rewire tree around node based on cost
-    # check neighbourhood if path cost is lower when node is their parent, rewire
     # todo looping occurs sometimes
     def rewireTree(self,node:TreeNode) -> None:
-        # xx
+        # init
+        neighbournode:TreeNode
+        # check neighbourhood if path cost is lower when node is their parent, rewire
         for neighbournode in node.neighbourhood:
             # -
             newpathcost = node.path_cost + node_distance(node,neighbournode)
@@ -220,16 +221,15 @@ class RRTAlgorithm:
         # initialise
         clear_treepath(self.goalpath)
         # reconstructing the path backwards from goal using parents
-        node = latestgoalnode
+        node:TreeNode = latestgoalnode
         while node is not self.startnode:
             self.goalpath.nodes.insert(0,node)
             # set memeberofpath, excluded in later nearest node searches
             node.memberofpath = True
             # previousnode moves 1 up the line through parent of node
-            previousnode = node.parent
-            # set path_parent and path_child 
+            previousnode:TreeNode = node.parent
+            # set path_child 
             # will be overwritten if node is member of next goal path
-            node.path_parent = previousnode
             previousnode.path_child = node
             # parent node moves 1 up the line
             node = previousnode
@@ -252,22 +252,24 @@ class RRTAlgorithm:
     #todo temp value, funtion of closest obstacle to start?
     # around each path node an exclusion radius that decreases in size towards start?
     def setExclusionZone(self) -> None:
-        exclusionradius = 200        #!
+        # init
+        EXCLUSIONRADIUS = 200        # todo  temp value
+        node:TreeNode
+        # set member of path for all nodes within exclusion radius from goal
         for node in self.randomtree.nodes:
-            if node_distance(node,self.goalnode) < exclusionradius:
+            if node_distance(node,self.goalnode) < EXCLUSIONRADIUS:
                 node.memberofpath = True
 
 
-    # reconstructing the goal Line of Sight (LOS) path with base at goal location
-    # checking for LOS from start to goal and moving base to farthest LOS node
+    # smooth final path using Line of Sight (LOS) algorithm
+    # check LOS to goal for each node walking from start to goal
+    # farthest node from goal with LOS becomes node in LOS path
+    # from this node check LOS for each node from start, etc.
     def pathToGoalLOS(self,latestgoalnode:TreeNode) -> bool:
-    # smooth final path using Line of Sight algorithm
-        # check LOS from goal to each node from start to goal    #todo update description
-        # farthest node with LOS becomes node in LOS path
-        # from this node check LOS for each node from start, etc.
-        # add path to pathLOS result
+        # check goal found
         if not self.goalfound: 
             return False
+        # init
         clear_treepath(self.goalpathLOS)    #todo, goalpathLOS used anywhere?
         # latestgoalnode is latest new node at goal location, becomes basenode
         LOSbasenode = latestgoalnode

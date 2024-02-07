@@ -1,4 +1,5 @@
 import math
+import copy
 from icecream import ic
 from route_opt_utils import CircleObstacle
 
@@ -8,16 +9,19 @@ class GridNode:
     def __init__(self,location:(int,int)) -> None:
         self.location = location
         self.parent = None
+        self.goalpath_parent = None
+        self.goalpath_child = None
+        self.LOSpath_parent = None
         self.edgelength = 0.0 
         self.edgecost = 100000.0     # edge from parent
         self.f_cost = 100000.0 
         self.g_cost = 100000.0 
         self.h_cost = 100000.0 
         self.lowriskzone_cnt = 0
-        self.lowriskzones = []
         self.mediumriskzone_cnt = 0
-        self.mediumriskzones = []
         self.highriskzone_cnt = 0
+        self.lowriskzones = []
+        self.mediumriskzones = []
         self.highriskzones = []
         self.riskmultiplier = 1
 
@@ -28,6 +32,9 @@ class GridPath:
         self.goalnode = goalnode
         self.nodes = []
         self.path_f_cost = 0
+        self.lowriskzones = []
+        self.mediumriskzones = []
+        self.highriskzones = []
 
 
 class AStarAlgorithm:
@@ -96,7 +103,7 @@ class AStarAlgorithm:
             # sort openlist on lowest f_cost
             self.openlist.sort(key=lambda x: x.f_cost)
             # qnode is node with lowest f_cost, pop from openlist
-            qnode = self.openlist.pop(0)
+            qnode:GridNode = self.openlist.pop(0)
             # generate new gridpoints in all 8 directions N,NE,E,SE,S,SW,W,NW
             new_gridpoints = []
             new_children = []
@@ -156,7 +163,7 @@ class AStarAlgorithm:
                 self.calc_f_cost(tempnode)
                 # check for existing node on this location
                 # if node exists, it is on openlist or closedlist (in this implementation)
-                node = None
+                node:GridNode = None
                 node = self.existing_gridnode(new_location)
                 # if existing node and f_cost lower, leave as is, go to next point
                 if node is not None and node.f_cost < tempnode.f_cost:
@@ -210,6 +217,7 @@ class AStarAlgorithm:
     def check_goal_found(self,node:GridNode,goalnode_list:list[GridNode]) -> list[GridNode]:
         # radius goal found
         GOALRADIUS = 2 * self.STEPSIZE
+        goalnode:GridNode
         # check goal found for each goal location left on goalnode_list
         for goalnode in goalnode_list:
             dist = math.dist(node.location,goalnode.location)
@@ -242,9 +250,7 @@ class AStarAlgorithm:
     
     def set_riskzone_count(self,node:GridNode) -> None:
         # initialise
-        lowrisk_cnt = 0
-        mediumrisk_cnt = 0
-        highrisk_cnt = 0
+        riskzone:CircleObstacle
         # risk range settings
         LOWRISK_RANGE = 1.0
         MEDIUMRISK_RANGE = 0.8
@@ -259,21 +265,18 @@ class AStarAlgorithm:
             # if in highrisk zone
             if dist < HIGHRISK_RANGE * riskzone.radius:
                 node.highriskzones.append(riskzone)
-                highrisk_cnt += 1
                 continue
             # if in mediumrisk zone
             if dist < MEDIUMRISK_RANGE * riskzone.radius:
                 node.mediumriskzones.append(riskzone)
-                mediumrisk_cnt += 1
                 continue
             # else in lowrisk zone
             else:
                 node.lowriskzones.append(riskzone)
-                lowrisk_cnt += 1
         # set risk count
-        node.lowriskzone_cnt = lowrisk_cnt
-        node.mediumriskzone_cnt = mediumrisk_cnt
-        node.highriskzone_cnt = highrisk_cnt
+        node.lowriskzone_cnt = len(node.lowriskzones)
+        node.mediumriskzone_cnt = len(node.mediumriskzones)
+        node.highriskzone_cnt = len(node.highriskzones)
 
     def set_riskmultiplier(self,node:GridNode) -> None:
         # initialise
@@ -295,16 +298,20 @@ class AStarAlgorithm:
         # set riskmultiplier
         node.riskmultiplier = riskmultiplier
     
-    # assumption is if existing it is on either openlist or closedlist                
-    def existing_gridnode(self,location:(int,int)) -> GridNode:
+    # check if is existing gridnode
+    def existing_gridnode(self,location:(int,int)) -> GridNode | None:
+        gridnode:GridNode
         for gridnode in self.gridnodes:
             if gridnode.location == location:
                 return gridnode
         return None
 
+    # todo used anywhere?
     # check if node is in free space or within circle obstacle
     def is_freespace(self,location:(int,int)) -> bool:
+        # init
         MARGIN = 0
+        riskzone:CircleObstacle
         # check for all obstacles
         for riskzone in self.obstacles:
             # collision when point is within circle radius + margin
@@ -315,8 +322,7 @@ class AStarAlgorithm:
     
     def is_within_mapdimensions(self,location:(int,int)) -> bool:
         # initialise
-        x_map = location[0]
-        y_map = location[1]
+        x_map,y_map = location
         # check within map dimensions
         if x_map < 0 or x_map > self.mapwidth:
             return False
@@ -324,25 +330,148 @@ class AStarAlgorithm:
             return False
         return True
         
-    # build path to goal if goal has been found
-    def create_goalpath(self) -> bool:
+    # build all paths to goal if goals have been found
+    def create_goalpaths(self) -> bool:
         # check goalfound
         if not self.goalfound: 
             return False
+        previousnode:GridNode
+        goalnode:GridNode
         # reconstructing the path backwards from goal using parents
         for goalnode in self.goalnodes:
             goalpath = GridPath(self.startnode,goalnode)
             goalpath.path_f_cost = goalnode.f_cost
-            node = goalnode
-            while node is not self.startnode:
+            node:GridNode = goalnode
+            while node.location is not self.startnode.location:
+                # list of all nodes in goalpath
                 goalpath.nodes.insert(0,node)
+                # lists of riskzones crossed in path
+                [goalpath.lowriskzones.append(zone) for zone in node.lowriskzones]
+                [goalpath.mediumriskzones.append(zone) for zone in node.mediumriskzones]
+                [goalpath.highriskzones.append(zone) for zone in node.highriskzones]
                 # previousnode moves 1 up the line through parent of node
-                previousnode = node.parent
+                # nodes are copied for each path to be able to use Line of Sight (LOS) optimisation later
+                previousnode = copy.deepcopy(node.parent)
+                node.goalpath_parent = previousnode
+                previousnode.goalpath_child = node
                 # parent node moves 1 up the line
                 node = previousnode
+            # add start location to path and update path startnode
+            goalpath.nodes.insert(0,node)
+            goalpath.startnode = node
+            [goalpath.lowriskzones.append(zone) for zone in node.lowriskzones]
+            [goalpath.mediumriskzones.append(zone) for zone in node.mediumriskzones]
+            [goalpath.highriskzones.append(zone) for zone in node.highriskzones]
+            ic(goalpath.lowriskzones)   # todo
+            ic(goalpath.mediumriskzones)   # todo
+            ic(goalpath.highriskzones)   # todo
+            # add goalpath to total list of goalpaths
             self.goalpaths.append(goalpath)
+            ic(len(self.goalpaths))     # todo
         # print results                
         print(f"{len(self.goalpaths)} goalpaths generated")
         return True
         
+
+    # smooth final path using Line of Sight (LOS) algorithm
+    # check LOS to goal for each node walking from start to goal
+    # farthest node from goal with LOS becomes node in LOS path
+    # from this node check LOS for each node from start, etc.
+    def create_LOS_goalpaths(self) -> bool:
+        # check goal found
+        if not self.goalfound: 
+            return False
+        # init
+        goalpath:GridPath
+        LOS_basenode:GridNode
+        node:GridNode
+        # latestgoalnode is latest new node at goal location, becomes basenode
+        for goalpath in self.goalpaths:
+            # start LOS checks at start node walking towards LOS basenode
+            node = goalpath.startnode
+            LOS_basenode = goalpath.goalnode
+            while LOS_basenode.location is not goalpath.startnode.location:
+                # if node has LOS with basenode, add it to the LOS path
+                # node then becomes the next LOS basenode
+                if not self.cross_riskzone(node,LOS_basenode,goalpath):
+                    #todo add node to goalpathLOS?
+                    # node and LOS basenode become each others parent and child
+                    LOS_basenode.LOSpath_parent = node
+                    ic(LOS_basenode.LOSpath_parent)             # todo
+                    # node becomes next LOSbasenode
+                    LOS_basenode = node
+                    # LOS checks again from start
+                    node = goalpath.startnode
+                    continue
+                # move one node towards LOS basenode over goalpath
+                node = node.goalpath_child
+                if node.location == LOS_basenode.location:
+                    print("node == LOS_basenode")   # todo
+                    break
+            print("next LOS goalpath")
+            #ic([temp for temp in goalpath.nodes if node.LOSpath_parent is not None])          # todo
+        # LOS path accessed through LOS path goalnode
+        # set LOS path cost
+        #?self.pathCostLOS(latestgoalnode)
+        print("LOS_goalpath calculated")
+        return True
         
+    # LOS
+    # from goal move outside circle with closest centre (after LOS check?)
+    # regular LOS checks
+    # when move from inside to outside circle place basenode there
+    #    all? or not crossing and only when inside outward? think yes
+    # check for nodes inside circles ahead of basenode to determine radius of circles
+    
+    # option
+    # move outside circle goal is in
+    # LOS check from goal to first node outside, without taking circle goal is in into account
+    # still inside other circle? repeat
+    # now outside and only crossing circle might still occur
+    
+    # option 2 
+    # same principle, but start from startnode
+    # check if only crossing, or if entering and not coming out
+
+        
+    # check if connection crosses a riskzone #todo update description
+    def cross_riskzone(self,node1:GridNode,node2:GridNode,goalpath:GridPath) -> bool:
+        # init
+        line_length = math.dist(node1.location,node2.location)
+        circle:CircleObstacle
+        # check for all obstacles
+        for circle in self.obstacles:
+            multiplier = 1.0
+            if circle in goalpath.lowriskzones:
+                multiplier = 0.8
+                #print("yesss")    # todo
+            if circle in goalpath.mediumriskzones:
+                multiplier = 0.5
+            if circle in goalpath.highriskzones:
+                multiplier = 0.0
+            # check if line is far enough away from circle to not cross
+            dist1 = math.dist(node1.location,circle.location)
+            dist2 = math.dist(node2.location,circle.location)
+            if (dist1 or dist2) > (line_length + circle.radius * multiplier):
+                continue
+            # divide connection in 100 points to check each
+            for i in range(0,101):
+                u = i/100                   
+                x = node1.location[0] * u + node2.location[0] * (1-u)
+                y = node1.location[1] * u + node2.location[1] * (1-u)
+                # collision when point is within circle radius
+                if math.dist((x,y),(circle.location)) < (circle.radius * multiplier):
+                    return True             
+        # no collision detected
+        return False
+
+    # todo     TEST
+    def test(self):
+        list = []
+        for riskzone in self.obstacles:
+            list.append(riskzone)
+        for circle in self.obstacles:
+            if circle in list:
+                print("yes")
+            else:
+                print("no")

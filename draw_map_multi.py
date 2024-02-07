@@ -26,33 +26,42 @@ class RoutingMap_matplotlib:
         self.WHITE = (1,1,1)
         self.PURPLE = (0.44,0.16,0.39)
 
+        # init plot
+        self.fig,(self.ax1,self.ax2) = plt.subplots(1,2,figsize=(22, 10))
+        self.ax1.set_xlim([0,self.MAPWIDTH])
+        self.ax1.set_ylim([0,self.MAPHEIGHT])
+        self.ax2.set_xlim([0,self.MAPWIDTH])
+        self.ax2.set_ylim([0,self.MAPHEIGHT])
+        self.ax1.set_title("Multiple goal A* algorithm on risk zone map")
+        self.ax2.set_title("Goal path Line of Sight optimisation")
+
     # draw base map with start and goal locations and obstacles
     def draw_basemap(self) -> None:
-        # init plot
-        fig,axes = plt.subplots(1,1,figsize=(10, 10))
-        plt.xlim([0,self.MAPWIDTH])
-        plt.ylim([0,self.MAPHEIGHT])
-        plt.title("Multiple goal A* algorithm on risk zone map")
         # plot start location
-        plt.scatter(self.start_x,self.start_y,color=self.GREEN,s=100,marker="o")
+        self.ax1.scatter(self.start_x,self.start_y,color=self.GREEN,s=100,marker="o")
+        self.ax2.scatter(self.start_x,self.start_y,color=self.GREEN,s=100,marker="o")
         # plot goal locations
         for goal_location in self.goal_locations:
-            plt.scatter(goal_location[0],goal_location[1],color=self.GREEN,s=300,marker="o")
+            self.ax1.scatter(goal_location[0],goal_location[1],color=self.GREEN,s=300,marker="o")
+            self.ax2.scatter(goal_location[0],goal_location[1],color=self.GREEN,s=300,marker="o")
         # plot circle obsticles
         for circle in self.obstacles:
-            circle = plt.Circle(circle.location,circle.radius,
+            circle1 = plt.Circle(circle.location,circle.radius,
                                 color=self.RED,lw=2,fill=False)
-            axes.add_patch(circle)
+            circle2 = plt.Circle(circle.location,circle.radius,
+                                color=self.RED,lw=2,fill=False)
+            self.ax1.add_patch(circle1)
+            self.ax2.add_patch(circle2)
 
     #
     def draw_tree(self,gridnodes:list[GridNode]) -> None:
         for node in gridnodes:
-            plt.scatter(node.location[0],node.location[1],
+            self.ax1.scatter(node.location[0],node.location[1],
                         color=self.GREY,s=20,marker="o")
             if not node.location == self.start_xy and node.parent is not None:
                 x_data = [node.location[0],node.parent.location[0]]
                 y_data = [node.location[1],node.parent.location[1]]
-                plt.plot(x_data,y_data,color=self.GREY,lw=0.5)
+                self.ax1.plot(x_data,y_data,color=self.GREY,lw=0.5)
                 
     #    
     def draw_path(self,goalpaths:list[GridPath]) -> None:
@@ -60,15 +69,33 @@ class RoutingMap_matplotlib:
             # for a path draw each node and connection to node parent 
             node = goalpath.goalnode
             while node.location is not goalpath.startnode.location:
-                plt.scatter(node.location[0],node.location[1],
+                self.ax1.scatter(node.location[0],node.location[1],
                             color=self.LIGHTBLUE,s=20,marker="o")
                 x_data = [node.location[0],node.parent.location[0]]
                 y_data = [node.location[1],node.parent.location[1]]
-                plt.plot(x_data,y_data,color=self.LIGHTBLUE,lw=0.5)
+                self.ax1.plot(x_data,y_data,color=self.LIGHTBLUE,lw=0.5)
                 # next node
                 node = node.parent
 
     
-    def draw_patLOS(self) -> None:
-        pass
+    def draw_LOS_path(self,goalpaths:list[GridPath]) -> None:
+        
+        
+        for goalpath in goalpaths:        
+            # for a path draw each node and connection to node parent 
+            node = goalpath.goalnode
+            while node.location is not goalpath.startnode.location:
+                self.ax2.scatter(node.location[0],node.location[1],
+                            color=self.DARKBLUE,s=20,marker="o")
+
+                if node.LOSpath_parent is None:
+                    print("LOS_parent is None:  no LOS path calculated")
+                    break
+
+                x_data = [node.location[0],node.LOSpath_parent.location[0]]
+                y_data = [node.location[1],node.LOSpath_parent.location[1]]
+                self.ax2.plot(x_data,y_data,color=self.DARKBLUE,lw=0.8)
+                # next node
+                node = node.LOSpath_parent
+
     

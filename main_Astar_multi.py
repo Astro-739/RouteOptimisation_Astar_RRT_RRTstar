@@ -36,18 +36,19 @@ def main():
     map.draw_basemap()
     print("map drawn")
  
-    time1 = time.time()
+    start = time.perf_counter()
     astar.astar_search()
-    astar.create_goalpath()
-    time2 = time.time()
+    astar.create_goalpaths()
+    astar.create_LOS_goalpaths()
+    #astar.test()
+    end = time.perf_counter()
     
     map.draw_tree(astar.gridnodes)
     map.draw_path(astar.goalpaths)
+    map.draw_LOS_path(astar.goalpaths)
     
-    numberofnodes = len(astar.gridnodes)
-    calc_time = time2 - time1
-    print(f"tree drawn with {numberofnodes} nodes")
-    print("calctime =", (calc_time))
+    print(f"tree drawn with {len(astar.gridnodes)} nodes")
+    print("calctime =", (end - start))
     
     plt.show()
     

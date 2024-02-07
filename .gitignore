@@ -6,5 +6,6 @@ build/**
 env/
 archive/
 *.jpeg
+*.png
 *.txt
 test*

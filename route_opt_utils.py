@@ -50,7 +50,7 @@ class TreeResults:
     def __init__(self,
                  start_location:(int,int),
                  goal_location:(int,int)
-                ) -> None:
+                 ) -> None:
         self.start_location = start_location
         self.goal_location = goal_location
         self.randomtree = []        #todo  hoe goed gebruiken?
@@ -81,7 +81,7 @@ def node_distance(node1:TreeNode,node2:TreeNode) -> float:
 def is_freespace_circle(node:TreeNode,
                         obstacles:CircleObstacle,
                         margin:int
-                       ) -> bool:
+                        ) -> bool:
     # check for all obstacles
     for circle in obstacles:
         # collision when point is within circle radius + margin
@@ -97,9 +97,10 @@ def cross_circle_obstacle(node1:TreeNode,
                           node2:TreeNode,
                           obstacles:CircleObstacle,
                           margin:int
-                         ) -> bool:
+                          ) -> bool:
     # init
     line_length = math.dist(node1.location,node2.location)
+    circle:CircleObstacle
     # check for all obstacles
     for circle in obstacles:
         # check if line is far enough away from circle to not cross
@@ -124,7 +125,7 @@ def nearest_neighbour(node:TreeNode,
                       startnode:TreeNode,
                       randomtree:TreePath,
                       RRTstar:bool
-                     ) -> TreeNode:
+                      ) -> TreeNode:
     # initialise
     d_min = 100000
     nearestnode = startnode
