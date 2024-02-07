@@ -14,7 +14,7 @@ def main():
     start_location = (100,100)
     goal_locations = [(800,700),(605,210),(305,408),(205,811),(503,905)]
     # number of obstacles
-    num_obstacles = 12
+    num_obstacles = 3
     # (min,max) radius
     obstacleradius = (50,200)
     # Astar algorithm stepsize (must align with start and goal)
@@ -40,7 +40,6 @@ def main():
     astar.astar_search()
     astar.create_goalpaths()
     astar.create_LOS_goalpaths()
-    #astar.test()
     end = time.perf_counter()
     
     map.draw_tree(astar.gridnodes)

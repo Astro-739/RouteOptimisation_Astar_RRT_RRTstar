@@ -25,6 +25,7 @@ class RoutingMap_matplotlib:
         self.RED = (1,0,0)
         self.WHITE = (1,1,1)
         self.PURPLE = (0.44,0.16,0.39)
+        self.YELLOW = "#ffcc00"
 
         # init plot
         self.fig,(self.ax1,self.ax2) = plt.subplots(1,2,figsize=(22, 10))
@@ -44,7 +45,7 @@ class RoutingMap_matplotlib:
         for goal_location in self.goal_locations:
             self.ax1.scatter(goal_location[0],goal_location[1],color=self.GREEN,s=300,marker="o")
             self.ax2.scatter(goal_location[0],goal_location[1],color=self.GREEN,s=300,marker="o")
-        # plot circle obsticles
+        # plot circle obstacles
         for circle in self.obstacles:
             circle1 = plt.Circle(circle.location,circle.radius,
                                 color=self.RED,lw=2,fill=False)
@@ -63,6 +64,11 @@ class RoutingMap_matplotlib:
                 y_data = [node.location[1],node.parent.location[1]]
                 self.ax1.plot(x_data,y_data,color=self.GREY,lw=0.5)
                 
+    #
+    def draw_node(self,node:GridNode) -> None:
+        self.ax1.scatter(node.location[0],node.location[1],
+                    color=self.BLUE,s=50,marker="o")
+
     #    
     def draw_path(self,goalpaths:list[GridPath]) -> None:
         for goalpath in goalpaths:        
@@ -70,17 +76,23 @@ class RoutingMap_matplotlib:
             node = goalpath.goalnode
             while node.location is not goalpath.startnode.location:
                 self.ax1.scatter(node.location[0],node.location[1],
-                            color=self.LIGHTBLUE,s=20,marker="o")
+                                 color=self.LIGHTBLUE,s=20,marker="o")
                 x_data = [node.location[0],node.parent.location[0]]
                 y_data = [node.location[1],node.parent.location[1]]
                 self.ax1.plot(x_data,y_data,color=self.LIGHTBLUE,lw=0.5)
                 # next node
                 node = node.parent
+            # draw start location
+            self.ax1.scatter(node.location[0],node.location[1],
+                             color=self.LIGHTBLUE,s=20,marker="o")
+            # draw highlight node
+            if goalpath.highlightnode is not None:
+                self.ax1.scatter(goalpath.highlightnode.location[0],goalpath.highlightnode.location[1],
+                                 color=self.YELLOW,s=60,marker="o")
+                
 
     
     def draw_LOS_path(self,goalpaths:list[GridPath]) -> None:
-        
-        
         for goalpath in goalpaths:        
             # for a path draw each node and connection to node parent 
             node = goalpath.goalnode
@@ -97,5 +109,8 @@ class RoutingMap_matplotlib:
                 self.ax2.plot(x_data,y_data,color=self.DARKBLUE,lw=0.8)
                 # next node
                 node = node.LOSpath_parent
+            # draw start location
+            self.ax2.scatter(node.location[0],node.location[1],
+                             color=self.DARKBLUE,s=20,marker="o")
 
     
