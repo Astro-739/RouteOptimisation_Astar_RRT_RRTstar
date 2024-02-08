@@ -14,11 +14,11 @@ def main():
     start_location = (100,100)
     goal_locations = [(800,700),(605,210),(305,408),(205,811),(503,905)]
     # number of obstacles
-    num_obstacles = 3
+    num_obstacles = 5
     # (min,max) radius
     obstacleradius = (50,200)
     # Astar algorithm stepsize (must align with start and goal)
-    stepsize = 25
+    stepsize = 40
     
     riskzones = make_circle_riskzones(mapdimensions,
                                       obstacleradius,

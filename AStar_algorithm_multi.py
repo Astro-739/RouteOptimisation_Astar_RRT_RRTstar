@@ -23,6 +23,7 @@ class GridNode:
         self.lowriskzones = []
         self.mediumriskzones = []
         self.highriskzones = []
+        self.riskzones = {}         # todo test if dict works here
         self.riskmultiplier = 1
 
 
@@ -35,6 +36,7 @@ class GridPath:
         self.lowriskzones = []
         self.mediumriskzones = []
         self.highriskzones = []
+        self.riskzones = {}         # todo test if dictionary works here
         self.highlightnode = None       # todo  debug
 
 
@@ -268,19 +270,23 @@ class AStarAlgorithm:
                 continue
             # if in highrisk zone
             if dist < HIGHRISK_RANGE * riskzone.radius:
-                node.highriskzones.append(riskzone)
+                node.highriskzones.append(riskzone)  # todo  .location for debug??
+                node.riskzones.update({riskzone.location:"high"})
                 continue
             # if in mediumrisk zone
             if dist < MEDIUMRISK_RANGE * riskzone.radius:
                 node.mediumriskzones.append(riskzone)
+                node.riskzones.update({riskzone.location:"medium"})
                 continue
             # else in lowrisk zone
             else:
                 node.lowriskzones.append(riskzone)
+                node.riskzones.update({riskzone.location:"low"})
         # set risk count
         node.lowriskzone_cnt = len(node.lowriskzones)
         node.mediumriskzone_cnt = len(node.mediumriskzones)
         node.highriskzone_cnt = len(node.highriskzones)
+        #ic(node.riskzones)      # todo   debug
 
     def set_riskmultiplier(self,node:GridNode) -> None:
         # initialise
@@ -348,6 +354,8 @@ class AStarAlgorithm:
                 [goalpath.lowriskzones.append(zone) for zone in node.lowriskzones if zone not in goalpath.lowriskzones]
                 [goalpath.mediumriskzones.append(zone) for zone in node.mediumriskzones if zone not in goalpath.mediumriskzones]
                 [goalpath.highriskzones.append(zone) for zone in node.highriskzones if zone not in goalpath.highriskzones]
+                # todo test dict
+                goalpath.riskzones.update(node.riskzones)
                 # previousnode moves 1 up the line through parent of node
                 # nodes are copied for each path to be able to use Line of Sight (LOS) optimisation later
                 previousnode = copy.deepcopy(node.parent)
@@ -364,6 +372,7 @@ class AStarAlgorithm:
             ic(goalpath.lowriskzones)   # todo
             ic(goalpath.mediumriskzones)   # todo
             ic(goalpath.highriskzones)   # todo
+            ic(goalpath.riskzones)      # todo
             # add goalpath to total list of goalpaths
             self.goalpaths.append(goalpath)
             ic(len(self.goalpaths))     # todo
