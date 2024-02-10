@@ -65,14 +65,14 @@ class AStarAlgorithm:
         self.startnode = GridNode(self.start_location)
         self.startnode.edgecost = 0.0
         self.startnode.g_cost = 0.0
-        self.set_riskzone_count(self.startnode)
+        self.set_riskzones(self.startnode)
         self.set_riskmultiplier(self.startnode)
         self.gridnodes.append(self.startnode)
         # init goalnodes
         self.goalnodes = []
         for location in self.goal_locations:
             goalnode = GridNode(location)
-            self.set_riskzone_count(goalnode)
+            self.set_riskzones(goalnode)
             self.set_riskmultiplier(goalnode)
             self.goalnodes.append(goalnode)
             self.gridnodes.append(goalnode)
@@ -162,7 +162,8 @@ class AStarAlgorithm:
                 tempnode = GridNode(new_location)
                 tempnode.edgelength = new_edge
                 # set riskzone count and multiplier for tempnode
-                self.set_riskzone_count(tempnode)
+                self.set_riskzones(tempnode)
+                self.cross_riskzone_edge(tempnode,qnode)      # todo test
                 self.set_riskmultiplier(tempnode)
                 # calculate costs based on risk multiplier
                 self.calc_edge_cost(tempnode)
@@ -256,38 +257,40 @@ class AStarAlgorithm:
     def update_node(self) -> None:
         pass
     
-    def set_riskzone_count(self,node:GridNode) -> None:
-        # risk range settings
-        LOWRISK_RANGE = 1.0
-        MEDIUMRISK_RANGE = 0.8
-        HIGHRISK_RANGE = 0.5
+    # determine if node is in riskzone (low, medium, high)
+    def set_riskzones(self,node:GridNode) -> None:
+        # risk range multiplier settings
+        LOWRISK_RANGE = 0.8
+        MEDIUMRISK_RANGE = 0.5
+        HIGHRISK_RANGE = 0.0
         # check for all obstacles
         for riskzone in self.obstacles:
             # distance between node location and centre of circle
             dist = math.dist(node.location,riskzone.location)
             # if outside cirle, continue
-            if dist > riskzone.radius + self.SAFETYMARGIN:
+            if dist > riskzone.radius + self.SAFETYMARGIN:  # todo safety margin here?
                 continue
             # if in highrisk zone
-            if dist < HIGHRISK_RANGE * riskzone.radius:
+            if dist < MEDIUMRISK_RANGE * riskzone.radius:   # todo safety margin here?
                 node.highriskzones.append(riskzone)  # todo  .location for debug??
-                node.riskzones.update({riskzone.location:"high"})
+                node.riskzones.update({riskzone.location:HIGHRISK_RANGE})
                 continue
             # if in mediumrisk zone
-            if dist < MEDIUMRISK_RANGE * riskzone.radius:
+            if dist < LOWRISK_RANGE * riskzone.radius:   # todo safety margin here?
                 node.mediumriskzones.append(riskzone)
-                node.riskzones.update({riskzone.location:"medium"})
+                node.riskzones.update({riskzone.location:MEDIUMRISK_RANGE})
                 continue
             # else in lowrisk zone
             else:
                 node.lowriskzones.append(riskzone)
-                node.riskzones.update({riskzone.location:"low"})
+                node.riskzones.update({riskzone.location:LOWRISK_RANGE})
         # set risk count
-        node.lowriskzone_cnt = len(node.lowriskzones)
-        node.mediumriskzone_cnt = len(node.mediumriskzones)
-        node.highriskzone_cnt = len(node.highriskzones)
+        #node.lowriskzone_cnt = len(node.lowriskzones)
+        #node.mediumriskzone_cnt = len(node.mediumriskzones)
+        #node.highriskzone_cnt = len(node.highriskzones)
         #ic(node.riskzones)      # todo   debug
 
+    # riskmultiplier is used to increase edgecost (edgecost = edgelength * riskmultiplier)
     def set_riskmultiplier(self,node:GridNode) -> None:
         # initialise
         riskmultiplier = 0
@@ -295,6 +298,11 @@ class AStarAlgorithm:
         LOWRISK_VALUE = 3
         MEDIUMRISK_VALUE = 5
         HIGHRISK_VALUE = 10
+        # set risk count
+        values = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.8])
+        node.lowriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.8])
+        node.mediumriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.5])
+        node.highriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.0])
         # determine riskmultiplier
         if node.lowriskzone_cnt > 0:
             riskmultiplier = riskmultiplier + LOWRISK_VALUE + (node.lowriskzone_cnt - 1)
@@ -369,9 +377,10 @@ class AStarAlgorithm:
             [goalpath.lowriskzones.append(zone) for zone in node.lowriskzones if zone not in goalpath.lowriskzones]
             [goalpath.mediumriskzones.append(zone) for zone in node.mediumriskzones if zone not in goalpath.mediumriskzones]
             [goalpath.highriskzones.append(zone) for zone in node.highriskzones if zone not in goalpath.highriskzones]
-            ic(goalpath.lowriskzones)   # todo
-            ic(goalpath.mediumriskzones)   # todo
-            ic(goalpath.highriskzones)   # todo
+            goalpath.riskzones.update(node.riskzones)
+            #ic(goalpath.lowriskzones)   # todo
+            #ic(goalpath.mediumriskzones)   # todo
+            #ic(goalpath.highriskzones)   # todo
             ic(goalpath.riskzones)      # todo
             # add goalpath to total list of goalpaths
             self.goalpaths.append(goalpath)
@@ -394,20 +403,25 @@ class AStarAlgorithm:
             # find first node outside of sams covering target
             outsidenode = goalpath.goalnode
             while outsidenode.riskmultiplier > 1:
-                ic(goalpath.lowriskzones)
-                ic(goalpath.mediumriskzones)
-                ic(goalpath.highriskzones)
+                #ic(goalpath.lowriskzones)       # todo debug
+                #ic(goalpath.mediumriskzones)
+                #ic(goalpath.highriskzones)
+
+                ic(outsidenode.riskzones)
+                ic(goalpath.riskzones)
+
                 [goalpath.lowriskzones.remove(zone) for zone in outsidenode.lowriskzones]
                 [goalpath.mediumriskzones.remove(zone) for zone in outsidenode.mediumriskzones]
                 [goalpath.highriskzones.remove(zone) for zone in outsidenode.highriskzones]
+                {goalpath.riskzones.pop(zone) for zone in outsidenode.riskzones if zone in goalpath.riskzones}
                 outsidenode = outsidenode.goalpath_parent
             # set outside node as first LOS path node after goalnode
             goalpath.goalnode.LOSpath_parent = outsidenode
             goalpath.highlightnode = outsidenode    # todo debug
             # sams covering goalnode are set to fully evade as riskzone
-            ic(goalpath.lowriskzones)
-            ic(goalpath.mediumriskzones)
-            ic(goalpath.highriskzones)
+            #ic(goalpath.lowriskzones)       # todo debug
+            #ic(goalpath.mediumriskzones)
+            #ic(goalpath.highriskzones)
             # start LOS checks at start node walking towards LOS basenode
             node = goalpath.startnode
             LOS_basenode = outsidenode
@@ -455,32 +469,72 @@ class AStarAlgorithm:
         
     # check if connection crosses a riskzone #todo update description
     def cross_riskzone(self,node1:GridNode,node2:GridNode,goalpath:GridPath) -> bool:
-        # init
-        line_length = math.dist(node1.location,node2.location)
         # check for all obstacles
         for circle in self.obstacles:
             multiplier = 1.0
-            if circle in goalpath.lowriskzones:
-                multiplier = 0.8
-            if circle in goalpath.mediumriskzones:
-                multiplier = 0.5
-            if circle in goalpath.highriskzones:
-                multiplier = 0.0
-            # check if line is far enough away from circle to not cross
-            dist1 = math.dist(node1.location,circle.location)
-            dist2 = math.dist(node2.location,circle.location)
-            if ((dist1 or dist2) 
-                 > (line_length + (circle.radius * multiplier + self.SAFETYMARGIN))):
-                continue
-            # divide connection in 100 points to check each
-            for i in range(0,101):
-                u = i/100                   
-                x = node1.location[0] * u + node2.location[0] * (1-u)
-                y = node1.location[1] * u + node2.location[1] * (1-u)
-                # collision when point is within circle radius + safety margin
-                if (math.dist((x,y),(circle.location)) 
-                    < ((circle.radius * multiplier + self.SAFETYMARGIN))):
-                    return True             
+            #if circle in goalpath.lowriskzones:
+            #    multiplier = 0.8
+            #if circle in goalpath.mediumriskzones:
+            #    multiplier = 0.5
+            #if circle in goalpath.highriskzones:
+            #    multiplier = 0.0
+            if circle.location in goalpath.riskzones:
+                multiplier = goalpath.riskzones.get(circle.location)
+                #if zone == "low":
+                #    multiplier = 0.8
+                #if zone == "medium":
+                #    multiplier = 0.5
+                #if zone == "high":
+                #    multiplier = 0.0
+            if self.cross_circle(node1,node2,circle,multiplier):
+                return True
         # no collision detected
         return False
 
+
+    # check if connection crosses a riskzone #todo update description
+    def cross_riskzone_edge(self,node1:GridNode,node2:GridNode) -> None:
+        # check for all obstacles
+        for circle in self.obstacles:
+            # edge check only if node1 and node2 are in same riskzone
+            if node1.riskzones.get(circle.location) is not node2.riskzones.get(circle.location):
+                continue
+
+            multiplier = 1.0
+            if circle.location in node1.riskzones:
+                multiplier = node1.riskzones.get(circle.location)
+            # check if edge crosses riskzone while nodes are not in riskzone
+            if self.cross_circle(node1,node2,circle,multiplier):
+                if multiplier == 0.5:
+                    multiplier = 0.0
+                if multiplier == 0.8:
+                    multiplier = 0.5
+                if multiplier == 1.0:
+                    multiplier = 0.8
+                node1.riskzones.update({circle.location:multiplier})
+                # update risk multiplier (used in edge cost)
+                #self.set_riskmultiplier(node1)
+
+                print("cross riskzone edge")
+
+
+    def cross_circle(self,node1:GridNode,node2:GridNode,circle:CircleObstacle,multiplier:float) -> bool:
+        # init
+        line_length = math.dist(node1.location,node2.location)
+        # check if line is far enough away from circle to not cross
+        dist1 = math.dist(node1.location,circle.location)
+        dist2 = math.dist(node2.location,circle.location)
+        if ((dist1 or dist2) 
+             > (line_length + (circle.radius * multiplier + self.SAFETYMARGIN))):
+            return False
+        # divide connection in 100 points to check each
+        for i in range(0,101):
+            u = i/100                   
+            x = node1.location[0] * u + node2.location[0] * (1-u)
+            y = node1.location[1] * u + node2.location[1] * (1-u)
+            # collision when point is within circle radius + safety margin
+            if (math.dist((x,y),(circle.location)) 
+                < ((circle.radius * multiplier + self.SAFETYMARGIN))):
+                return True             
+        # no collision detected
+        return False
