@@ -6,12 +6,12 @@ from route_opt_utils import RiskZone, CircleObstacle
 
 # generate circle obstacles at random locations within map dimensions, 
 # while not covering start or goal
-def make_circle_obstacles(start_xy:(int,int),
-                          goal_xy:(int,int),
-                          mapdimensions:(int,int),
-                          obstacleradius:(int,int),
+def make_circle_obstacles(start_xy:tuple[int],
+                          goal_xy:tuple[int],
+                          mapdimensions:tuple[int],
+                          obstacleradius:tuple[int],
                           num_obstacles:int
-                         ) -> list[CircleObstacle]:
+                          ) -> list[CircleObstacle]:
     # init
     obstaclelist = []
     EXTRA_CLEARANCE = 10
@@ -36,8 +36,8 @@ def make_circle_obstacles(start_xy:(int,int),
     return obstaclelist
 
 
-def make_circle_riskzones(mapdimensions:(int,int),
-                          obstacleradius:(int,int),
+def make_circle_riskzones(mapdimensions:tuple[int],
+                          obstacleradius:tuple[int],
                           num_obstacles:int
                          ) -> list[CircleObstacle]:
     # init
@@ -51,9 +51,27 @@ def make_circle_riskzones(mapdimensions:(int,int),
     return riskzonelist
 
 
+def read_circle_riskzones() -> list[CircleObstacle]:
+    # issues with startnode
+    dict1:dict = {(698, 171): 54, (456, 717): 195, (900, 813): 114, (214, 880): 196, (774, 131): 187, (406, 18): 152, (903, 39): 160, (514, 214): 151, (165, 838): 120, (162, 189): 133, (759, 843): 139, (952, 386): 98}
+    dict2:dict = {(192, 51): 199, (609, 738): 104, (555, 791): 139, (661, 663): 162, (672, 78): 127, (582, 768): 179, (951, 588): 120, (736, 740): 94, (161, 346): 162, (839, 757): 184, (266, 158): 63, (685, 565): 75}
+    # node = LOSbasenode issue
+    dict11:dict = {(306, 633): 191, (206, 532): 67, (282, 350): 179, (880, 677): 160, (987, 952): 186, (159, 720): 182, (806, 90): 115, (333, 34): 174, (518, 60): 100, (814, 709): 192, (678, 438): 145, (169, 304): 139}
+    dict12:dict = {(263, 377): 162, (656, 955): 127, (806, 153): 88, (983, 501): 194, (950, 713): 190, (646, 860): 106, (557, 387): 124, (413, 35): 98, (172, 827): 108, (696, 837): 121, (794, 726): 162, (555, 276): 193}
+    # init
+    riskzonelist = []
+    for item in dict1.items():
+        ic(item)
+        riskzone = CircleObstacle(item[0],item[1])
+        riskzonelist.append(riskzone)
+    # return result
+    ic(riskzonelist)
+    return riskzonelist
+
+
 # generate random location for centre of circle within map dimensions 
-def make_random_circle(mapdimensions:(int,int),
-                       obstacleradius:(int,int)
+def make_random_circle(mapdimensions:tuple[int],
+                       obstacleradius:tuple[int]
                       ) -> tuple[int]:
     # init
     mapheight,mapwidth = mapdimensions

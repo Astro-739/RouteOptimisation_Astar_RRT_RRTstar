@@ -6,7 +6,7 @@ from route_opt_utils import CircleObstacle
 
 
 class GridNode:
-    def __init__(self,location:(int,int)) -> None:
+    def __init__(self,location:tuple) -> None:
         self.location = location
         self.parent = None
         self.goalpath_parent = None
@@ -23,7 +23,7 @@ class GridNode:
         self.lowriskzones = []
         self.mediumriskzones = []
         self.highriskzones = []
-        self.riskzones = {}         # todo test if dict works here
+        self.riskzones = {}
         self.riskmultiplier = 1
 
 
@@ -33,19 +33,20 @@ class GridPath:
         self.goalnode = goalnode
         self.nodes = []
         self.path_f_cost = 0
-        self.lowriskzones = []
-        self.mediumriskzones = []
-        self.highriskzones = []
-        self.riskzones = {}         # todo test if dictionary works here
+        #self.lowriskzones = []
+        #self.mediumriskzones = []
+        #self.highriskzones = []
+        self.path_riskzones = {}
+        self.goal_riskzones = {}
         self.highlightnode = None       # todo  debug
 
 
 class AStarAlgorithm:
     def __init__(self,
-                 start_location:(int,int),
+                 start_location:tuple[int],
                  goal_locations:list[int],
                  obstacles:list[CircleObstacle],
-                 mapdimensions:(int,int),
+                 mapdimensions:tuple[int],
                  stepsize:int
                  ) -> None:
         self.start_location = start_location
@@ -76,9 +77,6 @@ class AStarAlgorithm:
             self.set_riskmultiplier(goalnode)
             self.goalnodes.append(goalnode)
             self.gridnodes.append(goalnode)
-            ic(goalnode.lowriskzones)         # todo debug
-            ic(goalnode.mediumriskzones)         # todo debug
-            ic(goalnode.highriskzones)         # todo debug                        
             
     def astar_search(self) -> None:
         # create startnode, goalnode
@@ -118,34 +116,35 @@ class AStarAlgorithm:
             location_and_edge_north     = (qnode.location[0], 
                                            qnode.location[1] + self.STEPSIZE, 
                                            self.STEPSIZE)
-            new_gridpoints.append(location_and_edge_north)
             location_and_edge_northeast = (qnode.location[0] + self.STEPSIZE, 
                                            qnode.location[1] + self.STEPSIZE, 
                                            math.sqrt(2) * self.STEPSIZE)
-            new_gridpoints.append(location_and_edge_northeast)
             location_and_edge_east      = (qnode.location[0] + self.STEPSIZE, 
                                            qnode.location[1], 
                                            self.STEPSIZE)
-            new_gridpoints.append(location_and_edge_east)
             location_and_edge_southeast = (qnode.location[0] + self.STEPSIZE, 
                                            qnode.location[1] - self.STEPSIZE, 
                                            math.sqrt(2) * self.STEPSIZE)
-            new_gridpoints.append(location_and_edge_southeast)
             location_and_edge_south     = (qnode.location[0], 
                                            qnode.location[1] - self.STEPSIZE, 
                                            self.STEPSIZE)
-            new_gridpoints.append(location_and_edge_south)
             location_and_edge_southwest = (qnode.location[0] - self.STEPSIZE, 
                                            qnode.location[1] - self.STEPSIZE, 
                                            math.sqrt(2) * self.STEPSIZE)
-            new_gridpoints.append(location_and_edge_southwest)
             location_and_edge_west      = (qnode.location[0] - self.STEPSIZE, 
                                            qnode.location[1], 
                                            self.STEPSIZE)
-            new_gridpoints.append(location_and_edge_west)
             location_and_edge_northwest = (qnode.location[0] - self.STEPSIZE, 
                                            qnode.location[1] + self.STEPSIZE, 
                                            math.sqrt(2) * self.STEPSIZE)
+            # add values to list
+            new_gridpoints.append(location_and_edge_north)
+            new_gridpoints.append(location_and_edge_northeast)
+            new_gridpoints.append(location_and_edge_east)
+            new_gridpoints.append(location_and_edge_southeast)
+            new_gridpoints.append(location_and_edge_south)
+            new_gridpoints.append(location_and_edge_southwest)
+            new_gridpoints.append(location_and_edge_west)
             new_gridpoints.append(location_and_edge_northwest)
             # for new gridpoints check if node already exists on location
             # check if existing node needs updates
@@ -260,7 +259,7 @@ class AStarAlgorithm:
     # determine if node is in riskzone (low, medium, high)
     def set_riskzones(self,node:GridNode) -> None:
         # risk range multiplier settings
-        LOWRISK_RANGE = 0.8
+        LOWRISK_RANGE = 0.8         # todo set as global?
         MEDIUMRISK_RANGE = 0.5
         HIGHRISK_RANGE = 0.0
         # check for all obstacles
@@ -272,7 +271,7 @@ class AStarAlgorithm:
                 continue
             # if in highrisk zone
             if dist < MEDIUMRISK_RANGE * riskzone.radius:   # todo safety margin here?
-                node.highriskzones.append(riskzone)  # todo  .location for debug??
+                node.highriskzones.append(riskzone)  # todo  add id to obstacle
                 node.riskzones.update({riskzone.location:HIGHRISK_RANGE})
                 continue
             # if in mediumrisk zone
@@ -284,22 +283,16 @@ class AStarAlgorithm:
             else:
                 node.lowriskzones.append(riskzone)
                 node.riskzones.update({riskzone.location:LOWRISK_RANGE})
-        # set risk count
-        #node.lowriskzone_cnt = len(node.lowriskzones)
-        #node.mediumriskzone_cnt = len(node.mediumriskzones)
-        #node.highriskzone_cnt = len(node.highriskzones)
-        #ic(node.riskzones)      # todo   debug
 
     # riskmultiplier is used to increase edgecost (edgecost = edgelength * riskmultiplier)
     def set_riskmultiplier(self,node:GridNode) -> None:
         # initialise
         riskmultiplier = 0
         # risk values
-        LOWRISK_VALUE = 3
-        MEDIUMRISK_VALUE = 5
-        HIGHRISK_VALUE = 10
+        LOWRISK_VALUE = 10
+        MEDIUMRISK_VALUE = 15
+        HIGHRISK_VALUE = 40
         # set risk count
-        values = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.8])
         node.lowriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.8])
         node.mediumriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.5])
         node.highriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.0])
@@ -317,7 +310,7 @@ class AStarAlgorithm:
         node.riskmultiplier = riskmultiplier
     
     # check if is existing gridnode
-    def existing_gridnode(self,location:(int,int)) -> GridNode | None:
+    def existing_gridnode(self,location:tuple[int]) -> GridNode | None:
         gridnode:GridNode
         for gridnode in self.gridnodes:
             if gridnode.location == location:
@@ -326,7 +319,7 @@ class AStarAlgorithm:
 
     # todo used anywhere?
     # check if node is in free space or within circle obstacle
-    def is_freespace(self,location:(int,int)) -> bool:
+    def is_freespace(self,location:tuple[int]) -> bool:
         # check for all obstacles
         for riskzone in self.obstacles:
             # collision when point is within circle radius + margin
@@ -335,7 +328,7 @@ class AStarAlgorithm:
         # no collision detected
         return True
     
-    def is_within_mapdimensions(self,location:(int,int)) -> bool:
+    def is_within_mapdimensions(self,location:tuple[int]) -> bool:
         # initialise
         x_map,y_map = location
         # check within map dimensions
@@ -358,12 +351,8 @@ class AStarAlgorithm:
             while node.location is not self.startnode.location:
                 # list of all nodes in goalpath
                 goalpath.nodes.insert(0,node)
-                # lists of riskzones crossed in path
-                [goalpath.lowriskzones.append(zone) for zone in node.lowriskzones if zone not in goalpath.lowriskzones]
-                [goalpath.mediumriskzones.append(zone) for zone in node.mediumriskzones if zone not in goalpath.mediumriskzones]
-                [goalpath.highriskzones.append(zone) for zone in node.highriskzones if zone not in goalpath.highriskzones]
-                # todo test dict
-                goalpath.riskzones.update(node.riskzones)
+                # dict of riskzones crossed in path
+                goalpath.path_riskzones.update(node.riskzones)
                 # previousnode moves 1 up the line through parent of node
                 # nodes are copied for each path to be able to use Line of Sight (LOS) optimisation later
                 previousnode = copy.deepcopy(node.parent)
@@ -374,14 +363,11 @@ class AStarAlgorithm:
             # add start location to path and update path startnode
             goalpath.nodes.insert(0,node)
             goalpath.startnode = node
-            [goalpath.lowriskzones.append(zone) for zone in node.lowriskzones if zone not in goalpath.lowriskzones]
-            [goalpath.mediumriskzones.append(zone) for zone in node.mediumriskzones if zone not in goalpath.mediumriskzones]
-            [goalpath.highriskzones.append(zone) for zone in node.highriskzones if zone not in goalpath.highriskzones]
-            goalpath.riskzones.update(node.riskzones)
+            goalpath.path_riskzones.update(node.riskzones)
             #ic(goalpath.lowriskzones)   # todo
             #ic(goalpath.mediumriskzones)   # todo
             #ic(goalpath.highriskzones)   # todo
-            ic(goalpath.riskzones)      # todo
+            ic(goalpath.path_riskzones)      # todo
             # add goalpath to total list of goalpaths
             self.goalpaths.append(goalpath)
             ic(len(self.goalpaths))     # todo
@@ -403,25 +389,25 @@ class AStarAlgorithm:
             # find first node outside of sams covering target
             outsidenode = goalpath.goalnode
             while outsidenode.riskmultiplier > 1:
-                #ic(goalpath.lowriskzones)       # todo debug
-                #ic(goalpath.mediumriskzones)
-                #ic(goalpath.highriskzones)
-
-                ic(outsidenode.riskzones)
-                ic(goalpath.riskzones)
-
-                [goalpath.lowriskzones.remove(zone) for zone in outsidenode.lowriskzones]
-                [goalpath.mediumriskzones.remove(zone) for zone in outsidenode.mediumriskzones]
-                [goalpath.highriskzones.remove(zone) for zone in outsidenode.highriskzones]
-                {goalpath.riskzones.pop(zone) for zone in outsidenode.riskzones if zone in goalpath.riskzones}
+                # sams covering goalnode are set to fully evade as riskzone
+                #{goalpath.path_riskzones.pop(zone) for zone in outsidenode.riskzones if zone in goalpath.path_riskzones}
+                for zone in outsidenode.riskzones:
+                    if zone in goalpath.path_riskzones:
+                        value = goalpath.path_riskzones.pop(zone)
+                        goalpath.goal_riskzones.update({zone:value})
+                #
                 outsidenode = outsidenode.goalpath_parent
+
+            ic(goalpath.path_riskzones)     # todo debug
+            ic(goalpath.goal_riskzones)     # todo debug
+            #
+            goalpath.goal_riskzones.update(goalpath.goalnode.riskzones)
+            ic(goalpath.goal_riskzones)     # todo debug
+            
+            
             # set outside node as first LOS path node after goalnode
             goalpath.goalnode.LOSpath_parent = outsidenode
             goalpath.highlightnode = outsidenode    # todo debug
-            # sams covering goalnode are set to fully evade as riskzone
-            #ic(goalpath.lowriskzones)       # todo debug
-            #ic(goalpath.mediumriskzones)
-            #ic(goalpath.highriskzones)
             # start LOS checks at start node walking towards LOS basenode
             node = goalpath.startnode
             LOS_basenode = outsidenode
@@ -442,7 +428,6 @@ class AStarAlgorithm:
                     print("node == LOS_basenode")   # todo
                     break
             print("next LOS goalpath")
-            #ic([temp for temp in goalpath.nodes if node.LOSpath_parent is not None])          # todo
         # LOS path accessed through LOS path goalnode
         # set LOS path cost
         #?self.pathCostLOS(latestgoalnode)
@@ -471,21 +456,11 @@ class AStarAlgorithm:
     def cross_riskzone(self,node1:GridNode,node2:GridNode,goalpath:GridPath) -> bool:
         # check for all obstacles
         for circle in self.obstacles:
+            # get multiplier
             multiplier = 1.0
-            #if circle in goalpath.lowriskzones:
-            #    multiplier = 0.8
-            #if circle in goalpath.mediumriskzones:
-            #    multiplier = 0.5
-            #if circle in goalpath.highriskzones:
-            #    multiplier = 0.0
-            if circle.location in goalpath.riskzones:
-                multiplier = goalpath.riskzones.get(circle.location)
-                #if zone == "low":
-                #    multiplier = 0.8
-                #if zone == "medium":
-                #    multiplier = 0.5
-                #if zone == "high":
-                #    multiplier = 0.0
+            if circle.location in goalpath.path_riskzones:
+                multiplier = goalpath.path_riskzones.get(circle.location)
+            # check if cross circle
             if self.cross_circle(node1,node2,circle,multiplier):
                 return True
         # no collision detected
@@ -512,12 +487,10 @@ class AStarAlgorithm:
                 if multiplier == 1.0:
                     multiplier = 0.8
                 node1.riskzones.update({circle.location:multiplier})
-                # update risk multiplier (used in edge cost)
-                #self.set_riskmultiplier(node1)
-
+                # todo check correct
                 print("cross riskzone edge")
 
-
+    # check whether a line between two nodes crosses a circle
     def cross_circle(self,node1:GridNode,node2:GridNode,circle:CircleObstacle,multiplier:float) -> bool:
         # init
         line_length = math.dist(node1.location,node2.location)

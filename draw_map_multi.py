@@ -5,9 +5,9 @@ from route_opt_utils import CircleObstacle
 
 class RoutingMap_matplotlib:
     def __init__(self,
-                 start_xy:(int,int),
+                 start_xy:tuple[int],
                  goal_locations:list[int],
-                 mapdimensions:(int,int),
+                 mapdimensions:tuple[int],
                  obstacles:list[CircleObstacle]
                  ) -> None:
         self.start_xy = start_xy

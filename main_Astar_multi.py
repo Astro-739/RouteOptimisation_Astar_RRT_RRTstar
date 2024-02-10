@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from icecream import ic
 from AStar_algorithm_multi import AStarAlgorithm
 from draw_map_multi import RoutingMap_matplotlib
-from create_obstacles import make_circle_riskzones
+from create_obstacles import make_circle_riskzones, read_circle_riskzones
 
 
 
@@ -23,6 +23,9 @@ def main():
     riskzones = make_circle_riskzones(mapdimensions,
                                       obstacleradius,
                                       num_obstacles)
+    
+    #riskzones = read_circle_riskzones()
+    
     astar = AStarAlgorithm(start_location,
                            goal_locations,
                            riskzones,
@@ -46,9 +49,11 @@ def main():
     map.draw_path(astar.goalpaths)
     map.draw_LOS_path(astar.goalpaths)
     
+    # riskzone locations
+    print("zones: ",{circle.location:circle.radius for circle in riskzones})
     print(f"tree drawn with {len(astar.gridnodes)} nodes")
     print("calctime =", (end - start))
-    
+        
     plt.show()
     
 

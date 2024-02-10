@@ -5,14 +5,14 @@ from icecream import ic
 
 
 class RiskZone:    
-    def __init__(self,location:(int,int),radius:(int)) -> None:
+    def __init__(self,location:tuple[int],radius:(int)) -> None:
         self.location = location
         self.radius = radius
         self.radiusLOS = radius
         
 
 class CircleObstacle:    
-    def __init__(self,location:(int,int),radius:(int)) -> None:
+    def __init__(self,location:tuple[int],radius:(int)) -> None:
         self.location = location
         self.radius = radius
         self.radiusLOS = radius
@@ -24,7 +24,7 @@ class SquareObstacle:
 
 
 class TreeNode:
-    def __init__(self,location:(int,int)) -> None:
+    def __init__(self,location:tuple[int]) -> None:
         self.location = location
         self.parent = None
         self.children = []
@@ -40,7 +40,7 @@ class TreeNode:
 
     
 class TreePath:
-    def __init__(self,location:(int,int)) -> None:
+    def __init__(self,location:tuple[int]) -> None:
         self.location = location
         self.nodes = []            # includes startnode
         self.path_cost = 0
@@ -48,8 +48,8 @@ class TreePath:
 
 class TreeResults:
     def __init__(self,
-                 start_location:(int,int),
-                 goal_location:(int,int)
+                 start_location:tuple[int],
+                 goal_location:tuple[int]
                  ) -> None:
         self.start_location = start_location
         self.goal_location = goal_location
