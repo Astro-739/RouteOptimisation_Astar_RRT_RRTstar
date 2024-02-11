@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from AStar_algorithm_multi import GridNode,GridPath
 from route_opt_utils import CircleObstacle
 
@@ -54,7 +55,7 @@ class RoutingMap_matplotlib:
             self.ax1.add_patch(circle1)
             self.ax2.add_patch(circle2)
 
-    #
+    # draw all nodes and their connections
     def draw_tree(self,gridnodes:list[GridNode]) -> None:
         for node in gridnodes:
             self.ax1.scatter(node.location[0],node.location[1],
@@ -64,13 +65,13 @@ class RoutingMap_matplotlib:
                 y_data = [node.location[1],node.parent.location[1]]
                 self.ax1.plot(x_data,y_data,color=self.GREY,lw=0.5)
                 
-    #
+    # draw single node
     def draw_node(self,node:GridNode) -> None:
         self.ax1.scatter(node.location[0],node.location[1],
                     color=self.BLUE,s=50,marker="o")
 
-    #    
-    def draw_path(self,goalpaths:list[GridPath]) -> None:
+    # draw all goal paths
+    def draw_paths(self,goalpaths:list[GridPath]) -> None:
         for goalpath in goalpaths:        
             # for a path draw each node and connection to node parent 
             node = goalpath.goalnode
@@ -91,26 +92,31 @@ class RoutingMap_matplotlib:
                                  color=self.YELLOW,s=60,marker="o")
                 
 
-    
-    def draw_LOS_path(self,goalpaths:list[GridPath]) -> None:
-        for goalpath in goalpaths:        
-            # for a path draw each node and connection to node parent 
+    # draw all Line of Sight (LOS) goal paths
+    def draw_LOS_paths(self,goalpaths:list[GridPath]) -> None:
+        # set colour list to cycle through TABLEAU_COLORS per goalpath
+        colours = []
+        [colours.append(colour) for colour in mcolors.TABLEAU_COLORS]
+        # for each goalpath draw each node and connection to node parent
+        for goalpath in goalpaths:
+            colour = colours[goalpaths.index(goalpath) % len(colours)]
             node = goalpath.goalnode
             while node.location is not goalpath.startnode.location:
+                # draw node
                 self.ax2.scatter(node.location[0],node.location[1],
-                            color=self.DARKBLUE,s=20,marker="o")
-
+                            color=colour,s=20,marker="o")
+                # catch exception
                 if node.LOSpath_parent is None:
                     print("LOS_parent is None:  no LOS path calculated")
                     break
-
+                # draw edge between nodes
                 x_data = [node.location[0],node.LOSpath_parent.location[0]]
                 y_data = [node.location[1],node.LOSpath_parent.location[1]]
-                self.ax2.plot(x_data,y_data,color=self.DARKBLUE,lw=0.8)
+                self.ax2.plot(x_data,y_data,color=colour,lw=1.0)
                 # next node
                 node = node.LOSpath_parent
-            # draw start location
+            # draw node at start location
             self.ax2.scatter(node.location[0],node.location[1],
-                             color=self.DARKBLUE,s=20,marker="o")
+                             color=colour,s=20,marker="o")
 
     

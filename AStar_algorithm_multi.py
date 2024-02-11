@@ -36,7 +36,7 @@ class GridPath:
         #self.lowriskzones = []
         #self.mediumriskzones = []
         #self.highriskzones = []
-        self.path_riskzones = {}
+        self.riskzones = {}
         self.goal_riskzones = {}
         self.highlightnode = None       # todo  debug
 
@@ -66,15 +66,15 @@ class AStarAlgorithm:
         self.startnode = GridNode(self.start_location)
         self.startnode.edgecost = 0.0
         self.startnode.g_cost = 0.0
-        self.set_riskzones(self.startnode)
-        self.set_riskmultiplier(self.startnode)
+        self.set_node_riskzones(self.startnode)
+        self.set_node_riskmultiplier(self.startnode)
         self.gridnodes.append(self.startnode)
         # init goalnodes
         self.goalnodes = []
         for location in self.goal_locations:
             goalnode = GridNode(location)
-            self.set_riskzones(goalnode)
-            self.set_riskmultiplier(goalnode)
+            self.set_node_riskzones(goalnode)
+            self.set_node_riskmultiplier(goalnode)
             self.goalnodes.append(goalnode)
             self.gridnodes.append(goalnode)
             
@@ -161,9 +161,9 @@ class AStarAlgorithm:
                 tempnode = GridNode(new_location)
                 tempnode.edgelength = new_edge
                 # set riskzone count and multiplier for tempnode
-                self.set_riskzones(tempnode)
+                self.set_node_riskzones(tempnode)
                 self.cross_riskzone_edge(tempnode,qnode)      # todo test
-                self.set_riskmultiplier(tempnode)
+                self.set_node_riskmultiplier(tempnode)
                 # calculate costs based on risk multiplier
                 self.calc_edge_cost(tempnode)
                 self.calc_g_cost(tempnode,qnode)
@@ -257,7 +257,8 @@ class AStarAlgorithm:
         pass
     
     # determine if node is in riskzone (low, medium, high)
-    def set_riskzones(self,node:GridNode) -> None:
+    # note: safetymargin is connected to safetymargin in cross_circle()
+    def set_node_riskzones(self,node:GridNode) -> None:
         # risk range multiplier settings
         LOWRISK_RANGE = 0.8         # todo set as global?
         MEDIUMRISK_RANGE = 0.5
@@ -267,25 +268,21 @@ class AStarAlgorithm:
             # distance between node location and centre of circle
             dist = math.dist(node.location,riskzone.location)
             # if outside cirle, continue
-            if dist > riskzone.radius + self.SAFETYMARGIN:  # todo safety margin here?
+            if dist > riskzone.radius + self.SAFETYMARGIN:
                 continue
             # if in highrisk zone
-            if dist < MEDIUMRISK_RANGE * riskzone.radius:   # todo safety margin here?
-                node.highriskzones.append(riskzone)  # todo  add id to obstacle
+            if dist < MEDIUMRISK_RANGE * riskzone.radius + self.SAFETYMARGIN:
                 node.riskzones.update({riskzone.location:HIGHRISK_RANGE})
                 continue
             # if in mediumrisk zone
-            if dist < LOWRISK_RANGE * riskzone.radius:   # todo safety margin here?
-                node.mediumriskzones.append(riskzone)
+            if dist < LOWRISK_RANGE * riskzone.radius + self.SAFETYMARGIN:
                 node.riskzones.update({riskzone.location:MEDIUMRISK_RANGE})
                 continue
             # else in lowrisk zone
-            else:
-                node.lowriskzones.append(riskzone)
-                node.riskzones.update({riskzone.location:LOWRISK_RANGE})
+            node.riskzones.update({riskzone.location:LOWRISK_RANGE})
 
     # riskmultiplier is used to increase edgecost (edgecost = edgelength * riskmultiplier)
-    def set_riskmultiplier(self,node:GridNode) -> None:
+    def set_node_riskmultiplier(self,node:GridNode) -> None:
         # initialise
         riskmultiplier = 0
         # risk values
@@ -351,8 +348,12 @@ class AStarAlgorithm:
             while node.location is not self.startnode.location:
                 # list of all nodes in goalpath
                 goalpath.nodes.insert(0,node)
-                # dict of riskzones crossed in path
-                goalpath.path_riskzones.update(node.riskzones)
+                # update goalpath riskzones, only if higher risk
+                for riskzone in node.riskzones:
+                    node_value = node.riskzones.get(riskzone)
+                    path_value = goalpath.riskzones.get(riskzone)
+                    if path_value is None or path_value > node_value:
+                        goalpath.riskzones.update({riskzone:node_value})
                 # previousnode moves 1 up the line through parent of node
                 # nodes are copied for each path to be able to use Line of Sight (LOS) optimisation later
                 previousnode = copy.deepcopy(node.parent)
@@ -363,11 +364,13 @@ class AStarAlgorithm:
             # add start location to path and update path startnode
             goalpath.nodes.insert(0,node)
             goalpath.startnode = node
-            goalpath.path_riskzones.update(node.riskzones)
-            #ic(goalpath.lowriskzones)   # todo
-            #ic(goalpath.mediumriskzones)   # todo
-            #ic(goalpath.highriskzones)   # todo
-            ic(goalpath.path_riskzones)      # todo
+            # update goalpath riskzones for startnode, only if higher risk
+            for riskzone in node.riskzones:
+                node_value = node.riskzones.get(riskzone)
+                path_value = goalpath.riskzones.get(riskzone)
+                if path_value is None or path_value > node_value:
+                    goalpath.riskzones.update({riskzone:node_value})
+            ic(goalpath.riskzones)      # todo
             # add goalpath to total list of goalpaths
             self.goalpaths.append(goalpath)
             ic(len(self.goalpaths))     # todo
@@ -380,7 +383,7 @@ class AStarAlgorithm:
     # check LOS to goal for each node walking from start to goal
     # farthest node from goal with LOS becomes node in LOS path
     # from this node check LOS for each node from start, etc.
-    def create_LOS_goalpaths(self) -> bool:
+    def create_LOS_goalpaths_level2(self) -> bool:
         # check goal found
         if not self.goalfound: 
             return False
@@ -390,21 +393,31 @@ class AStarAlgorithm:
             outsidenode = goalpath.goalnode
             while outsidenode.riskmultiplier > 1:
                 # sams covering goalnode are set to fully evade as riskzone
-                #{goalpath.path_riskzones.pop(zone) for zone in outsidenode.riskzones if zone in goalpath.path_riskzones}
-                for zone in outsidenode.riskzones:
-                    if zone in goalpath.path_riskzones:
-                        value = goalpath.path_riskzones.pop(zone)
-                        goalpath.goal_riskzones.update({zone:value})
-                #
+                {goalpath.riskzones.pop(zone) for zone in outsidenode.riskzones if zone in goalpath.riskzones}
+                #for zone in outsidenode.riskzones:
+                #    if zone in goalpath.riskzones:
+                #        value = goalpath.riskzones.pop(zone)
+                #        goalpath.goal_riskzones.update({zone:value})
+                # next node
                 outsidenode = outsidenode.goalpath_parent
 
-            ic(goalpath.path_riskzones)     # todo debug
-            ic(goalpath.goal_riskzones)     # todo debug
-            #
-            goalpath.goal_riskzones.update(goalpath.goalnode.riskzones)
-            ic(goalpath.goal_riskzones)     # todo debug
-            
-            
+            # in some cases the goalpath re-enters sams covering goalnode later
+            # these riskzones have to be put back in the goalpath riskzones
+            node = outsidenode
+            while node.location is not self.startnode.location:
+                # update goalpath riskzones, only if higher risk
+                for riskzone in node.riskzones:
+                    node_value = node.riskzones.get(riskzone)
+                    path_value = goalpath.riskzones.get(riskzone)
+                    if path_value is None or path_value > node_value:
+                        goalpath.riskzones.update({riskzone:node_value})
+                # node moves 1 up the line
+                previousnode = node.parent                        
+                node = previousnode
+            #? include startnode?
+
+            ic(goalpath.riskzones)     # todo debug
+
             # set outside node as first LOS path node after goalnode
             goalpath.goalnode.LOSpath_parent = outsidenode
             goalpath.highlightnode = outsidenode    # todo debug
@@ -434,6 +447,48 @@ class AStarAlgorithm:
         print("LOS_goalpath calculated")
         return True
         
+
+    # smooth final path using Line of Sight (LOS) algorithm
+    # level 1:  path takes all riskzones into account, 
+    #           except path direction inside riskzones covering goal
+    # check LOS to goal for each node walking from start to goal
+    # farthest node from goal with LOS becomes node in LOS path
+    # from this node check LOS for each node from start, etc.
+    def create_LOS_goalpaths_level1(self) -> bool:
+        # check goal found
+        if not self.goalfound: 
+            return False
+        # latestgoalnode is latest new node at goal location, becomes basenode
+        for goalpath in self.goalpaths:
+            # start LOS checks at start node walking towards LOS basenode
+            node = goalpath.startnode
+            LOS_basenode = goalpath.goalnode
+            while LOS_basenode.location is not goalpath.startnode.location:
+                # if node has LOS with basenode, add it to the LOS path
+                # node then becomes the next LOS basenode
+                if not self.cross_riskzone(node,LOS_basenode,goalpath):
+                    # node and LOS basenode become each others parent and child
+                    LOS_basenode.LOSpath_parent = node
+                    # node becomes next LOSbasenode
+                    LOS_basenode = node
+                    # LOS checks again from start
+                    node = goalpath.startnode
+                    continue
+                # move one node towards LOS basenode over goalpath
+                node = node.goalpath_child
+                #! catch issue
+                if node.location == LOS_basenode.location:
+                    print("node == LOS_basenode")   # todo fix 
+                    break
+            print("next LOS goalpath")
+        # LOS path accessed through LOS path goalnode
+        # set LOS path cost
+        #?self.pathCostLOS(latestgoalnode)
+        print("LOS_goalpath calculated")
+        return True
+
+
+
     # LOS
     # from goal move outside circle with closest centre (after LOS check?)
     # regular LOS checks
@@ -458,8 +513,8 @@ class AStarAlgorithm:
         for circle in self.obstacles:
             # get multiplier
             multiplier = 1.0
-            if circle.location in goalpath.path_riskzones:
-                multiplier = goalpath.path_riskzones.get(circle.location)
+            if circle.location in goalpath.riskzones:
+                multiplier = goalpath.riskzones.get(circle.location)
             # check if cross circle
             if self.cross_circle(node1,node2,circle,multiplier):
                 return True

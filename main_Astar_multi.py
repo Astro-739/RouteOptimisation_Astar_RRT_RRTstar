@@ -42,19 +42,21 @@ def main():
     start = time.perf_counter()
     astar.astar_search()
     astar.create_goalpaths()
-    astar.create_LOS_goalpaths()
+    astar.create_LOS_goalpaths_level2()
     end = time.perf_counter()
     
     map.draw_tree(astar.gridnodes)
-    map.draw_path(astar.goalpaths)
-    map.draw_LOS_path(astar.goalpaths)
+    map.draw_paths(astar.goalpaths)
+    map.draw_LOS_paths(astar.goalpaths)
     
     # riskzone locations
     print("zones: ",{circle.location:circle.radius for circle in riskzones})
     print(f"tree drawn with {len(astar.gridnodes)} nodes")
     print("calctime =", (end - start))
         
+    plt.savefig("figure.png")
     plt.show()
+
     
 
 # start main    
