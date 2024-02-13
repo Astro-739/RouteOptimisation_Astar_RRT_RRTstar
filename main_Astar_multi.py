@@ -42,7 +42,7 @@ def main():
     start = time.perf_counter()
     astar.astar_search()
     astar.create_goalpaths()
-    astar.create_LOS_goalpaths_level2()
+    astar.create_LOS_goalpaths_level3()
     end = time.perf_counter()
     
     map.draw_tree(astar.gridnodes)

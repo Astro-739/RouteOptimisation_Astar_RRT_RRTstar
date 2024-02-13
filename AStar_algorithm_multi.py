@@ -20,9 +20,9 @@ class GridNode:
         self.lowriskzone_cnt = 0
         self.mediumriskzone_cnt = 0
         self.highriskzone_cnt = 0
-        self.lowriskzones = []
-        self.mediumriskzones = []
-        self.highriskzones = []
+        #self.lowriskzones = []
+        #self.mediumriskzones = []
+        #self.highriskzones = []
         self.riskzones = {}
         self.riskmultiplier = 1
 
@@ -39,6 +39,7 @@ class GridPath:
         self.riskzones = {}
         self.goal_riskzones = {}
         self.highlightnode = None       # todo  debug
+        self.marked_nodes = []
 
 
 class AStarAlgorithm:
@@ -286,9 +287,9 @@ class AStarAlgorithm:
         # initialise
         riskmultiplier = 0
         # risk values
-        LOWRISK_VALUE = 10
-        MEDIUMRISK_VALUE = 15
-        HIGHRISK_VALUE = 40
+        LOWRISK_VALUE = 5
+        MEDIUMRISK_VALUE = 25
+        HIGHRISK_VALUE = 50
         # set risk count
         node.lowriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.8])
         node.mediumriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.5])
@@ -378,6 +379,100 @@ class AStarAlgorithm:
         print(f"{len(self.goalpaths)} goalpaths generated")
         return True
         
+    # smooth final path using Line of Sight (LOS) algorithm
+    # check LOS to goal for each node walking from start to goal
+    # farthest node from goal with LOS becomes node in LOS path
+    # from this node check LOS for each node from start, etc.
+    def create_LOS_goalpaths_level3(self) -> bool:
+        # check goal found
+        if not self.goalfound: 
+            return False
+        # latestgoalnode is latest new node at goal location, becomes basenode
+        for goalpath in self.goalpaths:
+            # find first node outside of sams covering target
+            outsidenode = goalpath.goalnode
+            while outsidenode.riskmultiplier > 1:
+                # sams covering goalnode are set to fully evade as riskzone
+                {goalpath.riskzones.pop(zone) for zone in outsidenode.riskzones if zone in goalpath.riskzones}
+                # next node
+                outsidenode = outsidenode.goalpath_parent
+            # in some cases the goalpath re-enters sams covering goalnode later
+            # these riskzones have to be put back in the goalpath riskzones
+            node = outsidenode
+            while node.location is not goalpath.startnode.location:
+                # update goalpath riskzones, only if higher riskzone
+                for riskzone in node.riskzones:
+                    node_value = node.riskzones.get(riskzone)
+                    path_value = goalpath.riskzones.get(riskzone)
+                    if path_value is None or path_value > node_value:
+                        goalpath.riskzones.update({riskzone:node_value})
+                # node moves 1 up the line
+                previousnode = node.goalpath_parent
+                node = previousnode
+            #? include startnode?
+
+            ic(goalpath.riskzones)     # todo debug
+
+            # mark all steps in goalpath from inside to outside of a riskzone
+            # and from outside to inside of a riskzone
+            node = goalpath.goalnode
+            while node.location is not goalpath.startnode.location:
+                node_riskmultiplier = node.riskmultiplier
+                previousnode = node.goalpath_parent
+                previousnode_riskmultiplier = previousnode.riskmultiplier
+                if node_riskmultiplier > 1 and previousnode_riskmultiplier == 1.0:
+                    goalpath.marked_nodes.append(previousnode)
+                if previousnode_riskmultiplier > 1 and node_riskmultiplier == 1.0:
+                    goalpath.marked_nodes.append(node)
+                # node moves 1 up the line
+                node = previousnode
+            # if marked_nodes empty, add goalnode
+            #if goalpath.marked_nodes == []:
+            #    goalpath.marked_nodes.append(goalpath.goalnode)
+            #if outsidenode.location is not goalpath.marked_nodes[0].location:
+                goalpath.marked_nodes.insert(0,outsidenode)
+            # add startnode
+            goalpath.marked_nodes.append(goalpath.startnode)
+            # todo debug
+            loc_marked = [marked_node.location for marked_node in goalpath.marked_nodes]
+            ic(loc_marked)
+
+            #! node.LOSpath_parent is same as node -> loop
+            marked_nodes_list = goalpath.marked_nodes.copy()
+            # set outside node as first LOS path node after goalnode
+            goalpath.goalnode.LOSpath_parent = outsidenode
+            ic(outsidenode.location)     # todo debug
+            # start LOS checks at start node walking towards LOS basenode
+            while len(marked_nodes_list) > 1:
+                LOS_basenode = marked_nodes_list.pop(0)
+                node = marked_nodes_list[0]
+                while LOS_basenode.location is not node.location:
+                    # if node has LOS with basenode, add it to the LOS path
+                    # node then becomes the next LOS basenode
+                    if not self.cross_riskzone(node,LOS_basenode,goalpath):
+                        # node and LOS basenode become each others parent and child
+                        LOS_basenode.LOSpath_parent = node
+                        ic(LOS_basenode.location)       # todo debug
+                        ic(LOS_basenode.LOSpath_parent.location)       # todo debug
+                        # node becomes next LOSbasenode
+                        LOS_basenode = node
+                        # LOS checks again from start
+                        node = marked_nodes_list[0]
+                        ic(node.location)       # todo debug
+                        #ic(node.LOSpath_parent.location)       # todo debug
+                        continue
+                    # no LOS, move one node towards LOS basenode over goalpath
+                    node = node.goalpath_child
+                    if node.location == LOS_basenode.location:
+                        print("node == LOS_basenode")   # todo
+                        break
+            print("next LOS goalpath")
+        # LOS path accessed through LOS path goalnode
+        # set LOS path cost
+        #?self.pathCostLOS(latestgoalnode)
+        print("LOS_goalpath calculated")
+        return True
+
 
     # smooth final path using Line of Sight (LOS) algorithm
     # check LOS to goal for each node walking from start to goal
@@ -405,14 +500,14 @@ class AStarAlgorithm:
             # these riskzones have to be put back in the goalpath riskzones
             node = outsidenode
             while node.location is not self.startnode.location:
-                # update goalpath riskzones, only if higher risk
+                # update goalpath riskzones, only if higher riskzone
                 for riskzone in node.riskzones:
                     node_value = node.riskzones.get(riskzone)
                     path_value = goalpath.riskzones.get(riskzone)
                     if path_value is None or path_value > node_value:
                         goalpath.riskzones.update({riskzone:node_value})
                 # node moves 1 up the line
-                previousnode = node.parent                        
+                previousnode = node.goalpath_parent
                 node = previousnode
             #? include startnode?
 
@@ -435,7 +530,7 @@ class AStarAlgorithm:
                     # LOS checks again from start
                     node = goalpath.startnode
                     continue
-                # move one node towards LOS basenode over goalpath
+                # no LOS, move one node towards LOS basenode over goalpath
                 node = node.goalpath_child
                 if node.location == LOS_basenode.location:
                     print("node == LOS_basenode")   # todo

@@ -118,5 +118,9 @@ class RoutingMap_matplotlib:
             # draw node at start location
             self.ax2.scatter(node.location[0],node.location[1],
                              color=colour,s=20,marker="o")
+            # draw goalpath marked_nodes
+            for marked_node in goalpath.marked_nodes:
+                self.ax1.scatter(marked_node.location[0],marked_node.location[1],
+                                 color=self.YELLOW,s=60,marker="o")
 
     
