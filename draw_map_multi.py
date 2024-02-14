@@ -77,15 +77,15 @@ class RoutingMap_matplotlib:
             node = goalpath.goalnode
             while node.location is not goalpath.startnode.location:
                 self.ax1.scatter(node.location[0],node.location[1],
-                                 color=self.LIGHTBLUE,s=20,marker="o")
+                                 color=self.DARKBLUE,s=20,marker="o")
                 x_data = [node.location[0],node.parent.location[0]]
                 y_data = [node.location[1],node.parent.location[1]]
-                self.ax1.plot(x_data,y_data,color=self.LIGHTBLUE,lw=0.5)
+                self.ax1.plot(x_data,y_data,color=self.DARKBLUE,lw=0.5)
                 # next node
                 node = node.parent
             # draw start location
             self.ax1.scatter(node.location[0],node.location[1],
-                             color=self.LIGHTBLUE,s=20,marker="o")
+                             color=self.DARKBLUE,s=20,marker="o")
             # draw highlight node
             if goalpath.highlightnode is not None:
                 self.ax1.scatter(goalpath.highlightnode.location[0],goalpath.highlightnode.location[1],
@@ -121,6 +121,6 @@ class RoutingMap_matplotlib:
             # draw goalpath marked_nodes
             for marked_node in goalpath.marked_nodes:
                 self.ax1.scatter(marked_node.location[0],marked_node.location[1],
-                                 color=self.YELLOW,s=60,marker="o")
+                                 color=self.LIGHTBLUE,s=30,marker="o")
 
     
