@@ -22,7 +22,7 @@ class GridNode:
         self.mediumriskzone_cnt = 0
         self.highriskzone_cnt = 0
         self.riskzones = {}
-        self.riskmultiplier = 1
+        self.risk_multiplier = 1
 
 
 class GridPath:
@@ -111,30 +111,38 @@ class AStarAlgorithm:
             # generate new gridpoints in all 8 directions N,NE,E,SE,S,SW,W,NW
             new_gridpoints = []
             new_children = []
+            #
+            dist = self.dist_node_riskzone(qnode)
+            if dist > 5 * self.STEPSIZE:
+                step_multiplier = 2
+            else:
+                step_multiplier = 1
+            grid_step = step_multiplier * self.STEPSIZE
+            #
             location_and_edge_north     = (qnode.location[0], 
-                                           qnode.location[1] + self.STEPSIZE, 
-                                           self.STEPSIZE)
-            location_and_edge_northeast = (qnode.location[0] + self.STEPSIZE, 
-                                           qnode.location[1] + self.STEPSIZE, 
-                                           math.sqrt(2) * self.STEPSIZE)
-            location_and_edge_east      = (qnode.location[0] + self.STEPSIZE, 
+                                           qnode.location[1] + grid_step, 
+                                           grid_step)
+            location_and_edge_northeast = (qnode.location[0] + grid_step, 
+                                           qnode.location[1] + grid_step, 
+                                           math.sqrt(2) * grid_step)
+            location_and_edge_east      = (qnode.location[0] + grid_step, 
                                            qnode.location[1], 
-                                           self.STEPSIZE)
-            location_and_edge_southeast = (qnode.location[0] + self.STEPSIZE, 
-                                           qnode.location[1] - self.STEPSIZE, 
-                                           math.sqrt(2) * self.STEPSIZE)
+                                           grid_step)
+            location_and_edge_southeast = (qnode.location[0] + grid_step, 
+                                           qnode.location[1] - grid_step, 
+                                           math.sqrt(2) * grid_step)
             location_and_edge_south     = (qnode.location[0], 
-                                           qnode.location[1] - self.STEPSIZE, 
-                                           self.STEPSIZE)
-            location_and_edge_southwest = (qnode.location[0] - self.STEPSIZE, 
-                                           qnode.location[1] - self.STEPSIZE, 
-                                           math.sqrt(2) * self.STEPSIZE)
-            location_and_edge_west      = (qnode.location[0] - self.STEPSIZE, 
+                                           qnode.location[1] - grid_step, 
+                                           grid_step)
+            location_and_edge_southwest = (qnode.location[0] - grid_step, 
+                                           qnode.location[1] - grid_step, 
+                                           math.sqrt(2) * grid_step)
+            location_and_edge_west      = (qnode.location[0] - grid_step, 
                                            qnode.location[1], 
-                                           self.STEPSIZE)
-            location_and_edge_northwest = (qnode.location[0] - self.STEPSIZE, 
-                                           qnode.location[1] + self.STEPSIZE, 
-                                           math.sqrt(2) * self.STEPSIZE)
+                                           grid_step)
+            location_and_edge_northwest = (qnode.location[0] - grid_step, 
+                                           qnode.location[1] + grid_step, 
+                                           math.sqrt(2) * grid_step)
             # add values to list
             new_gridpoints.append(location_and_edge_north)
             new_gridpoints.append(location_and_edge_northeast)
@@ -168,9 +176,8 @@ class AStarAlgorithm:
                 self.calc_h_cost(tempnode)
                 self.calc_f_cost(tempnode)
                 # check for existing node on this location
-                # if node exists, it is on openlist or closedlist (in this implementation)
-                node:GridNode = None
-                node = self.existing_gridnode(new_location)
+                # if node exists, it is on openlist or closedlist
+                node:GridNode = self.existing_gridnode(new_location)
                 # if existing node and f_cost lower, leave as is, go to next point
                 if node is not None and node.f_cost < tempnode.f_cost:
                     continue
@@ -204,7 +211,7 @@ class AStarAlgorithm:
     # edge cost based on distance and multiplier
     # multiplier is based on gridpoint location, all edges to point same multiplier
     def calc_edge_cost(self,node:GridNode) -> None:
-        node.edgecost = node.edgelength * node.riskmultiplier
+        node.edgecost = node.edgelength * node.risk_multiplier
 
     # total path predicted cost (f_cost = g_cost + h_cost)
     def calc_f_cost(self,node:GridNode) -> None:
@@ -279,10 +286,10 @@ class AStarAlgorithm:
             # else in lowrisk zone
             node.riskzones.update({riskzone.location:LOWRISK_RANGE})
 
-    # riskmultiplier is used to increase edgecost (edgecost = edgelength * riskmultiplier)
+    # risk_multiplier is used to increase edgecost (edgecost = edgelength * risk_multiplier)
     def set_node_riskmultiplier(self,node:GridNode) -> None:
         # initialise
-        riskmultiplier = 0
+        risk_multiplier = 0
         # risk values
         LOWRISK_VALUE = 5
         MEDIUMRISK_VALUE = 25
@@ -291,18 +298,18 @@ class AStarAlgorithm:
         node.lowriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.8])
         node.mediumriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.5])
         node.highriskzone_cnt = len([(node.riskzones[key]) for key in [*node.riskzones.keys()] if node.riskzones[key] == 0.0])
-        # determine riskmultiplier
+        # determine risk_multiplier
         if node.lowriskzone_cnt > 0:
-            riskmultiplier = riskmultiplier + LOWRISK_VALUE + (node.lowriskzone_cnt - 1)
+            risk_multiplier = risk_multiplier + LOWRISK_VALUE + (node.lowriskzone_cnt - 1)
         if node.mediumriskzone_cnt > 0:
-            riskmultiplier = riskmultiplier + MEDIUMRISK_VALUE + (node.mediumriskzone_cnt - 1)
+            risk_multiplier = risk_multiplier + MEDIUMRISK_VALUE + (node.mediumriskzone_cnt - 1)
         if node.highriskzone_cnt > 0:
-            riskmultiplier = riskmultiplier + HIGHRISK_VALUE + (node.highriskzone_cnt - 1)
+            risk_multiplier = risk_multiplier + HIGHRISK_VALUE + (node.highriskzone_cnt - 1)
         # default value is 1
-        if riskmultiplier == 0:
-            riskmultiplier = 1
-        # set riskmultiplier
-        node.riskmultiplier = riskmultiplier
+        if risk_multiplier == 0:
+            risk_multiplier = 1
+        # set risk_multiplier
+        node.risk_multiplier = risk_multiplier
     
     # check if is existing gridnode
     def existing_gridnode(self,location:tuple[int]) -> GridNode | None:
@@ -318,7 +325,7 @@ class AStarAlgorithm:
         # check for all obstacles
         for riskzone in self.obstacles:
             # collision when point is within circle radius + margin
-            if math.dist(location,riskzone.location) < (riskzone.range + self.SAFETYMARGIN):
+            if math.dist(location,riskzone.location) < (riskzone.radius + self.SAFETYMARGIN):
                 return False
         # no collision detected
         return True
@@ -332,6 +339,18 @@ class AStarAlgorithm:
         if y_map < 0 or y_map > self.mapheight:
             return False
         return True
+
+    # distance from node to closest riskzone edge
+    def dist_node_riskzone(self,node:GridNode) -> float:
+        # init
+        dist = []
+        # check for all obstacles
+        for riskzone in self.obstacles:
+            # distance from node to outer edge of riskzone
+            dist.append(math.dist(node.location,riskzone.location) - riskzone.radius)
+        return min(dist)
+            
+
         
     # build all paths to goal if goals have been found
     def create_goalpaths(self) -> bool:
@@ -342,7 +361,7 @@ class AStarAlgorithm:
         for goalnode in self.goalnodes:
             goalpath = GridPath(self.startnode,goalnode)
             goalpath.path_f_cost = goalnode.f_cost
-            node = goalnode
+            node:GridNode = goalnode
             while node.location is not self.startnode.location:
                 # list of all nodes in goalpath
                 goalpath.nodes.insert(0,node)
@@ -350,7 +369,7 @@ class AStarAlgorithm:
                 self.update_gridpath_riskzones(node,goalpath)
                 # previousnode moves 1 up the line through parent of node
                 # nodes are copied for each path to be able to use Line of Sight (LOS) optimisation later
-                previousnode = copy.deepcopy(node.parent)
+                previousnode:GridNode = copy.deepcopy(node.parent)
                 node.goalpath_parent = previousnode
                 previousnode.goalpath_child = node
                 # parent node moves 1 up the line
@@ -389,15 +408,15 @@ class AStarAlgorithm:
             ic(goalpath.riskzones)     # todo debug
             # mark all steps in goalpath from inside to outside of a riskzone
             # and from outside to inside of a riskzone
-            node = goalpath.goalnode
+            node:GridNode = goalpath.goalnode
             goalpath.marked_nodes.append(goalpath.goalnode)
             while node.location is not goalpath.startnode.location:
-                node_riskmultiplier = node.riskmultiplier
-                previousnode = node.goalpath_parent
-                previousnode_riskmultiplier = previousnode.riskmultiplier
-                if node_riskmultiplier > 1 and previousnode_riskmultiplier == 1.0:
+                node_risk_multiplier = node.risk_multiplier
+                previousnode:GridNode = node.goalpath_parent
+                previousnode_risk_multiplier = previousnode.risk_multiplier
+                if node_risk_multiplier > 1 and previousnode_risk_multiplier == 1.0:
                     goalpath.marked_nodes.append(previousnode)
-                if previousnode_riskmultiplier > 1 and node_riskmultiplier == 1.0:
+                if previousnode_risk_multiplier > 1 and node_risk_multiplier == 1.0:
                     goalpath.marked_nodes.append(node)
                 # node moves 1 up the line
                 node = previousnode
@@ -407,12 +426,12 @@ class AStarAlgorithm:
             marked_nodes_list = goalpath.marked_nodes.copy()
             # start LOS checks at start node walking towards LOS basenode
             while len(marked_nodes_list) > 1:
-                LOS_basenode = marked_nodes_list.pop(0)
+                LOS_basenode:GridNode = marked_nodes_list.pop(0)
                 node = marked_nodes_list[0]
                 # find local riskzones
                 # ----
                 LOS_localpath = GridPath(node,LOS_basenode)
-                stepnode = LOS_basenode
+                stepnode:GridNode = LOS_basenode
                 while stepnode.location is not node.location:
                     # update LOS_localpath riskzones
                     self.update_gridpath_riskzones(stepnode,LOS_localpath)
@@ -458,14 +477,14 @@ class AStarAlgorithm:
         # latestgoalnode is latest new node at goal location, becomes basenode
         for goalpath in self.goalpaths:
             # find first node outside of sams covering target
-            outsidenode = goalpath.goalnode
-            while outsidenode.riskmultiplier > 1:
+            outsidenode:GridNode = goalpath.goalnode
+            while outsidenode.risk_multiplier > 1:
                 # sams covering goalnode are set to fully evade as riskzone
                 {goalpath.riskzones.pop(zone) for zone in outsidenode.riskzones if zone in goalpath.riskzones}
                 outsidenode = outsidenode.goalpath_parent
             # in some cases the goalpath re-enters sams covering goalnode later
             # these riskzones have to be put back in the goalpath riskzones
-            node = outsidenode
+            node:GridNode = outsidenode
             while node.location is not self.startnode.location:
                 # update goalpath riskzones
                 self.update_gridpath_riskzones(node,goalpath)
@@ -480,7 +499,7 @@ class AStarAlgorithm:
             goalpath.highlightnode = outsidenode    # todo debug
             # start LOS checks at start node walking towards LOS basenode
             node = goalpath.startnode
-            LOS_basenode = outsidenode
+            LOS_basenode:GridNode = outsidenode
             while LOS_basenode.location is not goalpath.startnode.location:
                 # if node has LOS with basenode, add it to the LOS path
                 # node then becomes the next LOS basenode
@@ -518,8 +537,8 @@ class AStarAlgorithm:
         # latestgoalnode is latest new node at goal location, becomes basenode
         for goalpath in self.goalpaths:
             # start LOS checks at start node walking towards LOS basenode
-            node = goalpath.startnode
-            LOS_basenode = goalpath.goalnode
+            node:GridNode = goalpath.startnode
+            LOS_basenode:GridNode = goalpath.goalnode
             while LOS_basenode.location is not goalpath.startnode.location:
                 # if node has LOS with basenode, add it to the LOS path
                 # node then becomes the next LOS basenode
