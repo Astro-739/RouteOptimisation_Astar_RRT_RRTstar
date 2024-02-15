@@ -24,7 +24,7 @@ def main():
                                       obstacleradius,
                                       num_obstacles)
     
-    #riskzones = read_circle_riskzones()
+    riskzones = read_circle_riskzones()
     
     astar = AStarAlgorithm(start_location,
                            goal_locations,

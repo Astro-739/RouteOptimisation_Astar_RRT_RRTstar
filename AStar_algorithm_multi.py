@@ -112,11 +112,10 @@ class AStarAlgorithm:
             new_gridpoints = []
             new_children = []
             #
-            dist = self.dist_node_riskzone(qnode)
-            if dist > 5 * self.STEPSIZE:
-                step_multiplier = 2
-            else:
-                step_multiplier = 1
+            step_multiplier = 1
+            #dist = self.dist_node_riskzone(qnode)
+            #if dist > 5 * self.STEPSIZE:
+            #    step_multiplier = 2
             grid_step = step_multiplier * self.STEPSIZE
             #
             location_and_edge_north     = (qnode.location[0], 
