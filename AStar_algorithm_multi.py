@@ -34,7 +34,7 @@ class GridPath:
         self.riskzones = {}
         self.goal_riskzones = {}        # todo  how to use?
         self.highlightnode = None       # todo  debug
-        self.marked_nodes = []
+        self.transition_nodes = []
 
 #? double stepsize when far from riskzone
 #? store direction (eg. NW) for node to use later for waypoint reduction
@@ -167,7 +167,7 @@ class AStarAlgorithm:
                 tempnode.edgelength = new_edge
                 # set riskzone count and multiplier for tempnode
                 self.set_node_riskzones(tempnode)
-                self.cross_riskzone_edge(tempnode,qnode)
+                self.set_edge_riskzones(tempnode,qnode)
                 self.set_node_riskmultiplier(tempnode)
                 # calculate costs based on risk multiplier
                 self.calc_edge_cost(tempnode)
@@ -314,6 +314,32 @@ class AStarAlgorithm:
         # set risk_multiplier
         node.risk_multiplier = risk_multiplier
     
+    # determine edge riskzones and update node riskzones 
+    # when nodes are in the same riskzone and only the edge crosses another zone
+    def set_edge_riskzones(self,node1:GridNode,node2:GridNode) -> None:
+        # check for all obstacles
+        for circle in self.obstacles:
+            # edge check only if node1 and node2 are in the same riskzone
+            if node1.riskzones.get(circle.location) is not node2.riskzones.get(circle.location):
+                continue
+            # get current radius multiplier
+            radius_multiplier = 1.0
+            if circle.location in node1.riskzones:
+                radius_multiplier = node1.riskzones.get(circle.location)
+            # check if edge crosses riskzone while nodes are not in riskzone
+            # and update radius multiplier
+            if self.cross_circle(node1,node2,circle,radius_multiplier):
+                if radius_multiplier == 0.5:
+                    radius_multiplier = 0.0
+                if radius_multiplier == 0.8:
+                    radius_multiplier = 0.5
+                if radius_multiplier == 1.0:
+                    radius_multiplier = 0.8
+                # update node1 riskzone to account for edge crossing riskzone
+                node1.riskzones.update({circle.location:radius_multiplier})
+                # todo check
+                print("cross riskzone edge")
+
     # check if is existing gridnode
     def existing_gridnode(self,location:tuple[int]) -> GridNode | None:
         gridnode:GridNode
@@ -353,8 +379,6 @@ class AStarAlgorithm:
             dist.append(math.dist(node.location,riskzone.location) - riskzone.radius)
         return min(dist)
             
-
-        
     # build all paths to goal if goals have been found
     def create_goalpaths(self) -> bool:
         # check goalfound
@@ -399,6 +423,9 @@ class AStarAlgorithm:
                 gridpath.riskzones.update({riskzone:node_value})
         
     # smooth final path using Line of Sight (LOS) algorithm
+    # level 3:  path takes all riskzones into account, 
+    #           uses path optimisations, such as local riskzones
+    #           higher quality results
     # check LOS to goal for each node walking from start to goal
     # farthest node from goal with LOS becomes node in LOS path
     # from this node check LOS for each node from start, etc.
@@ -407,32 +434,34 @@ class AStarAlgorithm:
         if not self.goalfound: 
             return False
         # create LOS path for each goalpath
+        goalpath:GridPath       # todo declare in for statement?
         for goalpath in self.goalpaths:
             ic(goalpath.riskzones)     # todo debug
-            # mark all steps in goalpath from inside to outside of a riskzone
+            # mark all transitions in goalpath from inside to outside of a riskzone
             # and from outside to inside of a riskzone
             node:GridNode = goalpath.goalnode
-            goalpath.marked_nodes.append(goalpath.goalnode)
+            goalpath.transition_nodes.append(goalpath.goalnode)
             while node.location is not goalpath.startnode.location:
                 node_risk_multiplier = node.risk_multiplier
                 previousnode:GridNode = node.goalpath_parent
                 previousnode_risk_multiplier = previousnode.risk_multiplier
                 if node_risk_multiplier > 1 and previousnode_risk_multiplier == 1.0:
-                    goalpath.marked_nodes.append(previousnode)
+                    goalpath.transition_nodes.append(previousnode)
                 if previousnode_risk_multiplier > 1 and node_risk_multiplier == 1.0:
-                    goalpath.marked_nodes.append(node)
+                    goalpath.transition_nodes.append(node)
                 # node moves 1 up the line
                 node = previousnode
-            # add startnode to marked_nodes
-            goalpath.marked_nodes.append(goalpath.startnode)
+            # add startnode to transition_nodes
+            goalpath.transition_nodes.append(goalpath.startnode)
             # copy list for use later
-            marked_nodes_list = goalpath.marked_nodes.copy()
-            # start LOS checks at start node walking towards LOS basenode
-            while len(marked_nodes_list) > 1:
-                LOS_basenode:GridNode = marked_nodes_list.pop(0)
-                node = marked_nodes_list[0]
-                # find local riskzones
-                # ----
+            transition_nodes_list = goalpath.transition_nodes.copy()
+            # LOS checks in sections between transition nodes
+            # this gives a better final LOS path
+            # use transition nodes list and pop first until walked through entire list 
+            while len(transition_nodes_list) > 1:
+                LOS_basenode:GridNode = transition_nodes_list.pop(0)
+                node = transition_nodes_list[0]
+                # find local riskzones, between LOS basenode and node
                 LOS_localpath = GridPath(node,LOS_basenode)
                 stepnode:GridNode = LOS_basenode
                 while stepnode.location is not node.location:
@@ -443,8 +472,8 @@ class AStarAlgorithm:
                     stepnode = previousnode
                 # include last node, mainly when node is startnode
                 self.update_gridpath_riskzones(stepnode,LOS_localpath)
-                ic(LOS_localpath.riskzones)
-                # ----
+                ic(LOS_localpath.riskzones)     # todo debug
+                # Line of Sight checks
                 while LOS_basenode.location is not node.location:
                     # if node has LOS with basenode, add it to the LOS path
                     # node then becomes the next LOS basenode
@@ -454,7 +483,7 @@ class AStarAlgorithm:
                         # node becomes next LOSbasenode
                         LOS_basenode = node
                         # LOS checks again from start
-                        node = marked_nodes_list[0]
+                        node = transition_nodes_list[0]
                         continue
                     # no LOS, move one node towards LOS basenode over goalpath
                     node = node.goalpath_child
@@ -471,6 +500,9 @@ class AStarAlgorithm:
 
 
     # smooth final path using Line of Sight (LOS) algorithm
+    # level 2:  path takes all riskzones into account, 
+    #           also path direction inside riskzones covering goal
+    #           medium quality results
     # check LOS to goal for each node walking from start to goal
     # farthest node from goal with LOS becomes node in LOS path
     # from this node check LOS for each node from start, etc.
@@ -531,6 +563,7 @@ class AStarAlgorithm:
     # smooth final path using Line of Sight (LOS) algorithm
     # level 1:  path takes all riskzones into account, 
     #           except path direction inside riskzones covering goal
+    #           simplest code, but lower quality results
     # check LOS to goal for each node walking from start to goal
     # farthest node from goal with LOS becomes node in LOS path
     # from this node check LOS for each node from start, etc.
@@ -600,34 +633,6 @@ class AStarAlgorithm:
                 return True
         # no collision detected
         return False
-
-    # todo combine with above?
-    # todo  no, change title, unclear what cross_riskzone does for edge
-    # update node riskzones
-    # when nodes are in the same riskzone and only the edge crosses another zone
-    def cross_riskzone_edge(self,node1:GridNode,node2:GridNode) -> None:
-        # check for all obstacles
-        for circle in self.obstacles:
-            # edge check only if node1 and node2 are in same riskzone
-            if node1.riskzones.get(circle.location) is not node2.riskzones.get(circle.location):
-                continue
-            # get current radius multiplier
-            radius_multiplier = 1.0
-            if circle.location in node1.riskzones:
-                radius_multiplier = node1.riskzones.get(circle.location)
-            # check if edge crosses riskzone while nodes are not in riskzone
-            # and update radius multiplier
-            if self.cross_circle(node1,node2,circle,radius_multiplier):
-                if radius_multiplier == 0.5:
-                    radius_multiplier = 0.0
-                if radius_multiplier == 0.8:
-                    radius_multiplier = 0.5
-                if radius_multiplier == 1.0:
-                    radius_multiplier = 0.8
-                # update node1 riskzone to account for edge crossing riskzone
-                node1.riskzones.update({circle.location:radius_multiplier})
-                # todo check correct
-                print("cross riskzone edge")
 
     # check whether a line between two nodes crosses a circle
     def cross_circle(self,
