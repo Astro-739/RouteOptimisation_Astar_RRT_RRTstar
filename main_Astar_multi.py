@@ -18,7 +18,7 @@ def main():
     # (min,max) radius
     obstacleradius = (50,200)
     # Astar algorithm stepsize
-    stepsize = 25
+    stepsize = 40
     
     riskzones = make_circle_riskzones(mapdimensions,
                                       obstacleradius,

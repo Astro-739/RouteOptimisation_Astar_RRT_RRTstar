@@ -207,8 +207,8 @@ class AStarAlgorithm:
         print(f"final closedlist items: {len(self.closedlist)}")
 
     # edge cost to get to point
-    # edge cost based on distance and multiplier
-    # multiplier is based on gridpoint location, all edges to point same multiplier
+    # edge cost based on distance and risk multiplier
+    # risk multiplier is based on gridpoint location, all edges to point same multiplier
     def calc_edge_cost(self,node:GridNode) -> None:
         node.edgecost = node.edgelength * node.risk_multiplier
 
@@ -263,10 +263,13 @@ class AStarAlgorithm:
     # determine if node is in riskzone (low, medium, high)
     # note: safetymargin is connected to safetymargin in cross_circle()
     def set_node_riskzones(self,node:GridNode) -> None:
-        # risk range multiplier settings
-        LOWRISK_RANGE = 0.8         # todo set as global?
-        MEDIUMRISK_RANGE = 0.5
-        HIGHRISK_RANGE = 0.0
+        # risk radius multiplier settings
+        # low risk:    1.0 - 0.8 
+        # medium risk: 0.8 - 0.5 
+        # high risk:   0.5 - 0.0
+        LOWRISK_RADIUS_MULTIPLIER = 0.8         # todo set as global?
+        MEDIUMRISK_RADIUS_MULTIPLIER = 0.5
+        HIGHRISK_RADIUS_MULTIPLIER = 0.0
         # check for all obstacles
         for riskzone in self.obstacles:
             # distance between node location and centre of circle
@@ -275,21 +278,22 @@ class AStarAlgorithm:
             if dist > riskzone.radius + self.SAFETYMARGIN:
                 continue
             # if in highrisk zone
-            if dist < MEDIUMRISK_RANGE * riskzone.radius + self.SAFETYMARGIN:
-                node.riskzones.update({riskzone.location:HIGHRISK_RANGE})
+            if dist < MEDIUMRISK_RADIUS_MULTIPLIER * riskzone.radius + self.SAFETYMARGIN:
+                node.riskzones.update({riskzone.location:HIGHRISK_RADIUS_MULTIPLIER})
                 continue
             # if in mediumrisk zone
-            if dist < LOWRISK_RANGE * riskzone.radius + self.SAFETYMARGIN:
-                node.riskzones.update({riskzone.location:MEDIUMRISK_RANGE})
+            if dist < LOWRISK_RADIUS_MULTIPLIER * riskzone.radius + self.SAFETYMARGIN:
+                node.riskzones.update({riskzone.location:MEDIUMRISK_RADIUS_MULTIPLIER})
                 continue
             # else in lowrisk zone
-            node.riskzones.update({riskzone.location:LOWRISK_RANGE})
+            node.riskzones.update({riskzone.location:LOWRISK_RADIUS_MULTIPLIER})
 
     # risk_multiplier is used to increase edgecost (edgecost = edgelength * risk_multiplier)
     def set_node_riskmultiplier(self,node:GridNode) -> None:
         # initialise
         risk_multiplier = 0
-        # risk values
+        # risk values translate to costs 
+        # which are used by the A* algorithm to determine the lowest cost route
         LOWRISK_VALUE = 5
         MEDIUMRISK_VALUE = 25
         HIGHRISK_VALUE = 50
@@ -439,6 +443,7 @@ class AStarAlgorithm:
                     stepnode = previousnode
                 # include last node, mainly when node is startnode
                 self.update_gridpath_riskzones(stepnode,LOS_localpath)
+                ic(LOS_localpath.riskzones)
                 # ----
                 while LOS_basenode.location is not node.location:
                     # if node has LOS with basenode, add it to the LOS path
@@ -582,54 +587,66 @@ class AStarAlgorithm:
     # check if only crossing, or if entering and not coming out
 
         
-    # check if connection crosses a riskzone #todo update description
+    # check if connection crosses a riskzone for 2 nodes
     def cross_riskzone(self,node1:GridNode,node2:GridNode,goalpath:GridPath) -> bool:
         # check for all obstacles
         for circle in self.obstacles:
-            # get multiplier
-            multiplier = 1.0
+            # get radius_multiplier
+            radius_multiplier = 1.0
             if circle.location in goalpath.riskzones:
-                multiplier = goalpath.riskzones.get(circle.location)
+                radius_multiplier = goalpath.riskzones.get(circle.location)
             # check if cross circle
-            if self.cross_circle(node1,node2,circle,multiplier):
+            if self.cross_circle(node1,node2,circle,radius_multiplier):
                 return True
         # no collision detected
         return False
 
-
-    # check if connection crosses a riskzone #todo update description
+    # todo combine with above?
+    # todo  no, change title, unclear what cross_riskzone does for edge
+    # update node riskzones
+    # when nodes are in the same riskzone and only the edge crosses another zone
     def cross_riskzone_edge(self,node1:GridNode,node2:GridNode) -> None:
         # check for all obstacles
         for circle in self.obstacles:
             # edge check only if node1 and node2 are in same riskzone
             if node1.riskzones.get(circle.location) is not node2.riskzones.get(circle.location):
                 continue
-
-            multiplier = 1.0
+            # get current radius multiplier
+            radius_multiplier = 1.0
             if circle.location in node1.riskzones:
-                multiplier = node1.riskzones.get(circle.location)
+                radius_multiplier = node1.riskzones.get(circle.location)
             # check if edge crosses riskzone while nodes are not in riskzone
-            if self.cross_circle(node1,node2,circle,multiplier):
-                if multiplier == 0.5:
-                    multiplier = 0.0
-                if multiplier == 0.8:
-                    multiplier = 0.5
-                if multiplier == 1.0:
-                    multiplier = 0.8
-                node1.riskzones.update({circle.location:multiplier})
+            # and update radius multiplier
+            if self.cross_circle(node1,node2,circle,radius_multiplier):
+                if radius_multiplier == 0.5:
+                    radius_multiplier = 0.0
+                if radius_multiplier == 0.8:
+                    radius_multiplier = 0.5
+                if radius_multiplier == 1.0:
+                    radius_multiplier = 0.8
+                # update node1 riskzone to account for edge crossing riskzone
+                node1.riskzones.update({circle.location:radius_multiplier})
                 # todo check correct
                 print("cross riskzone edge")
 
     # check whether a line between two nodes crosses a circle
-    def cross_circle(self,node1:GridNode,node2:GridNode,circle:CircleObstacle,multiplier:float) -> bool:
-        # init
-        line_length = math.dist(node1.location,node2.location)
+    def cross_circle(self,
+                     node1:GridNode,
+                     node2:GridNode,
+                     circle:CircleObstacle,
+                     radius_multiplier:float
+                     ) -> bool:
+        # circle radius is zero
+        if radius_multiplier == 0.0:
+            return False
         # check if line is far enough away from circle to not cross
+        line_length = math.dist(node1.location,node2.location)
         dist1 = math.dist(node1.location,circle.location)
         dist2 = math.dist(node2.location,circle.location)
         if ((dist1 or dist2) 
-             > (line_length + (circle.radius * multiplier + self.SAFETYMARGIN))):
+             > (line_length + (circle.radius * radius_multiplier + self.SAFETYMARGIN))):
             return False
+        # when line is close to circle
         # divide connection in 100 points to check each
         for i in range(0,101):
             u = i/100                   
@@ -637,7 +654,7 @@ class AStarAlgorithm:
             y = node1.location[1] * u + node2.location[1] * (1-u)
             # collision when point is within circle radius + safety margin
             if (math.dist((x,y),(circle.location)) 
-                < ((circle.radius * multiplier + self.SAFETYMARGIN))):
+                < ((circle.radius * radius_multiplier + self.SAFETYMARGIN))):
                 return True             
         # no collision detected
         return False

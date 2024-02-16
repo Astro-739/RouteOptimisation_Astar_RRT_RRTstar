@@ -29,7 +29,9 @@ class RoutingMap_matplotlib:
         self.YELLOW = "#ffcc00"
 
         # init plot
-        self.fig,(self.ax1,self.ax2) = plt.subplots(1,2,figsize=(22, 10))
+        # 22,10 for large monitor
+        # 15,7 laptop
+        self.fig,(self.ax1,self.ax2) = plt.subplots(1,2,figsize=(15, 7))
         self.ax1.set_xlim([0,self.MAPWIDTH])
         self.ax1.set_ylim([0,self.MAPHEIGHT])
         self.ax2.set_xlim([0,self.MAPWIDTH])
