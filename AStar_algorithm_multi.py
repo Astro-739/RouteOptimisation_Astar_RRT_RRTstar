@@ -38,6 +38,12 @@ class GridPath:
 
 #? double stepsize when far from riskzone
 #? store direction (eg. NW) for node to use later for waypoint reduction
+#? remove outside node and check for better result
+#? calc LOS path cost or assume same as goalpath?
+#? explain extra_clearance in create obstacles
+#? move from obstacles to riskzones
+#? make provisions for LORAD 
+#? branch out to 4 "start nodes"
 
 class AStarAlgorithm:
     def __init__(self,
@@ -109,7 +115,7 @@ class AStarAlgorithm:
             # qnode is node with lowest f_cost, pop from openlist
             qnode:GridNode = self.openlist.pop(0)
             # generate new gridpoints in all 8 directions N,NE,E,SE,S,SW,W,NW
-            new_gridpoints = []
+            #new_gridpoints = []
             new_children = []
             #
             step_multiplier = 1
@@ -118,39 +124,10 @@ class AStarAlgorithm:
             #    step_multiplier = 2
             grid_step = step_multiplier * self.STEPSIZE
             #
-            location_and_edge_north     = (qnode.location[0], 
-                                           qnode.location[1] + grid_step, 
-                                           grid_step)
-            location_and_edge_northeast = (qnode.location[0] + grid_step, 
-                                           qnode.location[1] + grid_step, 
-                                           math.sqrt(2) * grid_step)
-            location_and_edge_east      = (qnode.location[0] + grid_step, 
-                                           qnode.location[1], 
-                                           grid_step)
-            location_and_edge_southeast = (qnode.location[0] + grid_step, 
-                                           qnode.location[1] - grid_step, 
-                                           math.sqrt(2) * grid_step)
-            location_and_edge_south     = (qnode.location[0], 
-                                           qnode.location[1] - grid_step, 
-                                           grid_step)
-            location_and_edge_southwest = (qnode.location[0] - grid_step, 
-                                           qnode.location[1] - grid_step, 
-                                           math.sqrt(2) * grid_step)
-            location_and_edge_west      = (qnode.location[0] - grid_step, 
-                                           qnode.location[1], 
-                                           grid_step)
-            location_and_edge_northwest = (qnode.location[0] - grid_step, 
-                                           qnode.location[1] + grid_step, 
-                                           math.sqrt(2) * grid_step)
-            # add values to list
-            new_gridpoints.append(location_and_edge_north)
-            new_gridpoints.append(location_and_edge_northeast)
-            new_gridpoints.append(location_and_edge_east)
-            new_gridpoints.append(location_and_edge_southeast)
-            new_gridpoints.append(location_and_edge_south)
-            new_gridpoints.append(location_and_edge_southwest)
-            new_gridpoints.append(location_and_edge_west)
-            new_gridpoints.append(location_and_edge_northwest)
+            if iteration == -1:
+                new_gridpoints = self.new_gridpoints_initial(qnode,grid_step)
+            else:
+                new_gridpoints = self.new_gridpoints_NESW(qnode,grid_step)
             # for new gridpoints check if node already exists on location
             # check if existing node needs updates
             # or create new node if no node exists
@@ -205,6 +182,74 @@ class AStarAlgorithm:
         # print final status
         print(f"final openlist items: {len(self.openlist)}")
         print(f"final closedlist items: {len(self.closedlist)}")
+
+    # generate new gridpoints in all 8 directions N,NE,E,SE,S,SW,W,NW
+    def new_gridpoints_NESW(self,qnode:GridNode,grid_step:int) -> list:
+        # init
+        new_gridpoints = []
+        # new locations
+        location_and_edge_north     = (qnode.location[0], 
+                                       qnode.location[1] + grid_step, 
+                                       grid_step)
+        location_and_edge_northeast = (qnode.location[0] + grid_step, 
+                                       qnode.location[1] + grid_step, 
+                                       math.sqrt(2) * grid_step)
+        location_and_edge_east      = (qnode.location[0] + grid_step, 
+                                       qnode.location[1], 
+                                       grid_step)
+        location_and_edge_southeast = (qnode.location[0] + grid_step, 
+                                       qnode.location[1] - grid_step, 
+                                       math.sqrt(2) * grid_step)
+        location_and_edge_south     = (qnode.location[0], 
+                                       qnode.location[1] - grid_step, 
+                                       grid_step)
+        location_and_edge_southwest = (qnode.location[0] - grid_step, 
+                                       qnode.location[1] - grid_step, 
+                                       math.sqrt(2) * grid_step)
+        location_and_edge_west      = (qnode.location[0] - grid_step, 
+                                       qnode.location[1], 
+                                       grid_step)
+        location_and_edge_northwest = (qnode.location[0] - grid_step, 
+                                       qnode.location[1] + grid_step, 
+                                       math.sqrt(2) * grid_step)
+        # add values to list
+        new_gridpoints.append(location_and_edge_north)
+        new_gridpoints.append(location_and_edge_northeast)
+        new_gridpoints.append(location_and_edge_east)
+        new_gridpoints.append(location_and_edge_southeast)
+        new_gridpoints.append(location_and_edge_south)
+        new_gridpoints.append(location_and_edge_southwest)
+        new_gridpoints.append(location_and_edge_west)
+        new_gridpoints.append(location_and_edge_northwest)
+        # return new gridpoints
+        return new_gridpoints
+
+    # generate new gridpoints for first iteration   # todo update description
+    def new_gridpoints_initial(self,qnode:GridNode,grid_step:int) -> list:
+        # init
+        new_gridpoints = []
+        # new locations
+        location_and_edge_1     = (qnode.location[0], 
+                                   qnode.location[1] + 8 * grid_step, 
+                                   0)
+        location_and_edge_2     = (qnode.location[0], 
+                                   qnode.location[1] + 4 * grid_step, 
+                                   0)
+        location_and_edge_3     = (qnode.location[0], 
+                                   qnode.location[1] - 4 * grid_step, 
+                                   0)
+        location_and_edge_4     = (qnode.location[0], 
+                                   qnode.location[1] - 8 * grid_step, 
+                                   0)
+        # add values to list
+        new_gridpoints.append(location_and_edge_1)
+        new_gridpoints.append(location_and_edge_2)
+        new_gridpoints.append(location_and_edge_3)
+        new_gridpoints.append(location_and_edge_4)
+        # return new gridpoints
+        return new_gridpoints
+
+
 
     # edge cost to get to point
     # edge cost based on distance and risk multiplier
@@ -388,6 +433,7 @@ class AStarAlgorithm:
         for goalnode in self.goalnodes:
             goalpath = GridPath(self.startnode,goalnode)
             goalpath.path_f_cost = goalnode.f_cost
+            ic(goalpath.path_f_cost)        # todo debug
             node:GridNode = goalnode
             while node.location is not self.startnode.location:
                 # list of all nodes in goalpath
@@ -424,7 +470,8 @@ class AStarAlgorithm:
         
     # smooth final path using Line of Sight (LOS) algorithm
     # level 3:  path takes all riskzones into account, 
-    #           uses path optimisations, such as local riskzones
+    #           uses path optimisations, such as 
+    #           transition nodes with local riskzones
     #           higher quality results
     # check LOS to goal for each node walking from start to goal
     # farthest node from goal with LOS becomes node in LOS path
@@ -511,6 +558,7 @@ class AStarAlgorithm:
         if not self.goalfound: 
             return False
         # latestgoalnode is latest new node at goal location, becomes basenode
+        goalpath:GridPath       # todo declare in for statement?
         for goalpath in self.goalpaths:
             # find first node outside of sams covering target
             outsidenode:GridNode = goalpath.goalnode
@@ -549,6 +597,7 @@ class AStarAlgorithm:
                     continue
                 # no LOS, move one node towards LOS basenode over goalpath
                 node = node.goalpath_child
+                # catch exception
                 if node.location == LOS_basenode.location:
                     print("node == LOS_basenode")   # todo
                     break
@@ -572,6 +621,7 @@ class AStarAlgorithm:
         if not self.goalfound: 
             return False
         # latestgoalnode is latest new node at goal location, becomes basenode
+        goalpath:GridPath       # todo declare in for statement?
         for goalpath in self.goalpaths:
             # start LOS checks at start node walking towards LOS basenode
             node:GridNode = goalpath.startnode
@@ -589,7 +639,7 @@ class AStarAlgorithm:
                     continue
                 # move one node towards LOS basenode over goalpath
                 node = node.goalpath_child
-                # catch issue
+                # catch exception
                 if node.location == LOS_basenode.location:
                     print("node == LOS_basenode")   # todo
                     break
