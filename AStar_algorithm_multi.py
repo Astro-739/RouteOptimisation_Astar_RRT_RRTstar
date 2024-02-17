@@ -47,13 +47,13 @@ class GridPath:
 
 class AStarAlgorithm:
     def __init__(self,
-                 start_location:tuple[int],
+                 start_locations:list[int],
                  goal_locations:list[int],
                  obstacles:list[CircleObstacle],
                  mapdimensions:tuple[int],
                  stepsize:int
                  ) -> None:
-        self.start_location = start_location
+        self.start_locations = start_locations
         self.goal_locations = goal_locations
         self.obstacles = obstacles
         self.mapheight,self.mapwidth = mapdimensions
@@ -66,13 +66,13 @@ class AStarAlgorithm:
         self.gridnodes = []
         self.goalpaths = []
         self.goalfound = False
-        # init startnode
-        self.startnode = GridNode(self.start_location)
-        self.startnode.edgecost = 0.0
-        self.startnode.g_cost = 0.0
-        self.set_node_riskzones(self.startnode)
-        self.set_node_riskmultiplier(self.startnode)
-        self.gridnodes.append(self.startnode)
+        # init rootnode
+        root_location = (-30,500)
+        self.rootnode = GridNode(root_location)
+        self.rootnode.edgecost = 0.0
+        self.rootnode.g_cost = 0.0
+        self.set_node_riskzones(self.rootnode)
+        self.set_node_riskmultiplier(self.rootnode)
         # init goalnodes
         self.goalnodes = []
         for location in self.goal_locations:
@@ -101,8 +101,9 @@ class AStarAlgorithm:
         # put q node in closed list
         # end while loop
         
-        # add startnode to openlist as first node
-        self.openlist.append(self.startnode)
+        # add startnodes to openlist as first nodes
+        #for startnode in self.startnodes:
+        self.openlist.append(self.rootnode)
 
         iteration = 0
         goalnode_list = self.goalnodes.copy()
@@ -124,7 +125,7 @@ class AStarAlgorithm:
             #    step_multiplier = 2
             grid_step = step_multiplier * self.STEPSIZE
             #
-            if iteration == -1:
+            if iteration == 1:
                 new_gridpoints = self.new_gridpoints_initial(qnode,grid_step)
             else:
                 new_gridpoints = self.new_gridpoints_NESW(qnode,grid_step)
@@ -229,23 +230,12 @@ class AStarAlgorithm:
         # init
         new_gridpoints = []
         # new locations
-        location_and_edge_1     = (qnode.location[0], 
-                                   qnode.location[1] + 8 * grid_step, 
-                                   0)
-        location_and_edge_2     = (qnode.location[0], 
-                                   qnode.location[1] + 4 * grid_step, 
-                                   0)
-        location_and_edge_3     = (qnode.location[0], 
-                                   qnode.location[1] - 4 * grid_step, 
-                                   0)
-        location_and_edge_4     = (qnode.location[0], 
-                                   qnode.location[1] - 8 * grid_step, 
-                                   0)
-        # add values to list
-        new_gridpoints.append(location_and_edge_1)
-        new_gridpoints.append(location_and_edge_2)
-        new_gridpoints.append(location_and_edge_3)
-        new_gridpoints.append(location_and_edge_4)
+        for start_location in self.start_locations:
+            location_and_edge = (start_location[0], 
+                                 start_location[1], 
+                                 0)
+            # add values to list
+            new_gridpoints.append(location_and_edge)
         # return new gridpoints
         return new_gridpoints
 
@@ -431,11 +421,11 @@ class AStarAlgorithm:
             return False
         # reconstructing the path backwards from goal using parents
         for goalnode in self.goalnodes:
-            goalpath = GridPath(self.startnode,goalnode)
+            goalpath = GridPath(None,goalnode)
             goalpath.path_f_cost = goalnode.f_cost
             ic(goalpath.path_f_cost)        # todo debug
             node:GridNode = goalnode
-            while node.location is not self.startnode.location:
+            while node.location not in self.start_locations:
                 # list of all nodes in goalpath
                 goalpath.nodes.insert(0,node)
                 # update goalpath riskzones, only if higher risk
@@ -569,7 +559,7 @@ class AStarAlgorithm:
             # in some cases the goalpath re-enters sams covering goalnode later
             # these riskzones have to be put back in the goalpath riskzones
             node:GridNode = outsidenode
-            while node.location is not self.startnode.location:
+            while node.location is not goalpath.startnode.location:
                 # update goalpath riskzones
                 self.update_gridpath_riskzones(node,goalpath)
                 # node moves 1 up the line

@@ -6,12 +6,12 @@ from route_opt_utils import CircleObstacle
 
 class RoutingMap_matplotlib:
     def __init__(self,
-                 start_location:tuple[int],
+                 start_locations:list[int],
                  goal_locations:list[int],
                  mapdimensions:tuple[int],
                  obstacles:list[CircleObstacle]
                  ) -> None:
-        self.start_location = start_location
+        self.start_locations = start_locations
         self.goal_locations = goal_locations
         self.MAPWIDTH,self.MAPHEIGHT = mapdimensions
         self.obstacles = obstacles
@@ -41,8 +41,9 @@ class RoutingMap_matplotlib:
     # draw base map with start and goal locations and obstacles
     def draw_basemap(self) -> None:
         # plot start location
-        self.ax1.scatter(self.start_location[0],self.start_location[1],color=self.GREEN,s=100,marker="o")
-        self.ax2.scatter(self.start_location[0],self.start_location[1],color=self.GREEN,s=100,marker="o")
+        for start_location in self.start_locations:
+            self.ax1.scatter(start_location[0],start_location[1],color=self.GREEN,s=100,marker="o")
+            self.ax2.scatter(start_location[0],start_location[1],color=self.GREEN,s=100,marker="o")
         # plot goal locations
         for goal_location in self.goal_locations:
             self.ax1.scatter(goal_location[0],goal_location[1],color=self.GREEN,s=300,marker="o")
@@ -61,7 +62,7 @@ class RoutingMap_matplotlib:
         for node in gridnodes:
             self.ax1.scatter(node.location[0],node.location[1],
                         color=self.GREY,s=20,marker="o")
-            if not node.location == self.start_location and node.parent is not None:
+            if not node.location in self.start_locations and node.parent is not None:
                 x_data = [node.location[0],node.parent.location[0]]
                 y_data = [node.location[1],node.parent.location[1]]
                 self.ax1.plot(x_data,y_data,color=self.GREY,lw=0.5)

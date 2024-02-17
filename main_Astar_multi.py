@@ -11,7 +11,7 @@ def main():
     #  map width (x), map height (y)
     mapdimensions = (1000,1000)          
     # locations in (x,y)
-    start_location = (10,500)
+    start_locations = [(10,100),(10,500),(10,900)]
     goal_locations = [(800,700),(605,210),(305,408),(205,811),(503,905)]
     # number of obstacle
     num_obstacles = 12
@@ -26,12 +26,12 @@ def main():
     
     #riskzones = read_circle_riskzones()
     
-    astar = AStarAlgorithm(start_location,
+    astar = AStarAlgorithm(start_locations,
                            goal_locations,
                            riskzones,
                            mapdimensions,
                            stepsize)
-    map = RoutingMap_matplotlib(start_location,
+    map = RoutingMap_matplotlib(start_locations,
                                 goal_locations,
                                 mapdimensions,
                                 riskzones)
