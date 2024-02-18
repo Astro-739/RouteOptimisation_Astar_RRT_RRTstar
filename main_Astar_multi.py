@@ -12,7 +12,7 @@ def main():
     mapdimensions = (1000,1000)          
     # locations in (x,y)
     start_locations = [(10,100),(10,500),(10,900)]
-    goal_locations = [(800,700),(605,210),(305,408),(205,811),(503,905)]
+    goal_locations = [(800,700),(605,210),(305,408),(205,811),(503,905),(860,235)]
     # number of obstacle
     num_obstacles = 12
     # (min,max) radius
@@ -24,7 +24,7 @@ def main():
                                       obstacleradius,
                                       num_obstacles)
     
-    #riskzones = read_circle_riskzones()
+    riskzones = read_circle_riskzones()
     
     astar = AStarAlgorithm(start_locations,
                            goal_locations,
