@@ -139,10 +139,6 @@ class AStarAlgorithm:
                 # new location and edge of gridpoint
                 new_location = (location_and_edge[0],location_and_edge[1])
                 new_edge = location_and_edge[2]
-                # todo  debug
-                if new_location == (330,20):
-                    ic(new_location)
-                    ic(qnode.location)
                 # if not within map dimenstions, continue to next gridpoint
                 if not self.is_within_mapdimensions(new_location):
                     continue
@@ -176,14 +172,6 @@ class AStarAlgorithm:
                     node.parent = qnode
                     self.gridnodes.append(node)
                     new_children.append(node)
-                # update node if new or if existing and tempnode has lower f_cost
-                #! riskzones are not updated and stick with wrong values
-                #! should use everything from tempnode, except parent, set later
-                #node.edgecost = tempnode.edgecost
-                #node.f_cost = tempnode.f_cost
-                #node.g_cost = tempnode.g_cost
-                #node.h_cost = tempnode.h_cost
-                
                 # check if goal found and update goalnode_list
                 goalnode_list = self.check_goal_found(node,goalnode_list)
                 # set goal found flag true when all goals found
@@ -450,16 +438,10 @@ class AStarAlgorithm:
         for goalnode in self.goalnodes:
             goalpath = GridPath(goalnode)
             goalpath.path_f_cost = goalnode.f_cost
-            ic(goalpath.path_f_cost)        # todo debug
             node:GridNode = goalnode
             while node.location not in self.start_locations:
                 # list of all nodes in goalpath
                 goalpath.nodes.insert(0,node)
-                # todo  debug
-                if node.location == (320,10):
-                    ic(node.location)
-                    ic(node.parent)
-                
                 # update goalpath riskzones, only if higher risk
                 self.update_gridpath_riskzones(node,goalpath)
                 # previousnode moves 1 up the line through parent of node
@@ -526,10 +508,6 @@ class AStarAlgorithm:
                 node = previousnode
             # add startnode to transition_nodes
             goalpath.transition_nodes.append(goalpath.startnode)
-            templist = [(node.location,node.risk_multiplier) for node in goalpath.transition_nodes]
-            ic(templist)            # todo debug
-            templist2 = [(node.location,node.risk_multiplier,node.riskzones) for node in goalpath.nodes]
-            ic(templist2)            # todo debug
             # copy list for use later
             transition_nodes_list = goalpath.transition_nodes.copy()
             # LOS checks in sections between transition nodes
