@@ -44,6 +44,7 @@ class GridPath:
 #? move from obstacles to riskzones
 #? make provisions for LORAD 
 #? branch out to 4 "start nodes"
+#? check goal found not first of 8, but best of 8
 
 class AStarAlgorithm:
     def __init__(self,
@@ -138,6 +139,10 @@ class AStarAlgorithm:
                 # new location and edge of gridpoint
                 new_location = (location_and_edge[0],location_and_edge[1])
                 new_edge = location_and_edge[2]
+                # todo  debug
+                if new_location == (330,20):
+                    ic(new_location)
+                    ic(qnode.location)
                 # if not within map dimenstions, continue to next gridpoint
                 if not self.is_within_mapdimensions(new_location):
                     continue
@@ -156,20 +161,29 @@ class AStarAlgorithm:
                 # check for existing node on this location
                 # if node exists, it is on openlist or closedlist
                 node:GridNode = self.existing_gridnode(new_location)
-                # if existing node and f_cost lower, leave as is, go to next point
-                if node is not None and node.f_cost < tempnode.f_cost:
+                # if existing node and f_cost lower than tempnode, 
+                # leave as is, go to next point
+                if node is not None and node.f_cost <= tempnode.f_cost:
                     continue
-                # if not existing, make new node
+                # if existing node and f_cost higher than tempnode,
+                # update node
+                if node is not None and node.f_cost > tempnode.f_cost:
+                    self.update_node(node,tempnode)
+                    node.parent = qnode
+                # if node does not exist, make new node
                 if node is None:
                     node = tempnode
+                    node.parent = qnode
                     self.gridnodes.append(node)
                     new_children.append(node)
-                # update node if new or if existing and higher f_cost
-                node.parent = qnode
-                node.edgecost = tempnode.edgecost
-                node.f_cost = tempnode.f_cost
-                node.g_cost = tempnode.g_cost
-                node.h_cost = tempnode.h_cost
+                # update node if new or if existing and tempnode has lower f_cost
+                #! riskzones are not updated and stick with wrong values
+                #! should use everything from tempnode, except parent, set later
+                #node.edgecost = tempnode.edgecost
+                #node.f_cost = tempnode.f_cost
+                #node.g_cost = tempnode.g_cost
+                #node.h_cost = tempnode.h_cost
+                
                 # check if goal found and update goalnode_list
                 goalnode_list = self.check_goal_found(node,goalnode_list)
                 # set goal found flag true when all goals found
@@ -238,8 +252,6 @@ class AStarAlgorithm:
         # return new gridpoints
         return new_gridpoints
 
-
-
     # edge cost to get to point
     # edge cost based on distance and risk multiplier
     # risk multiplier is based on gridpoint location, all edges to point same multiplier
@@ -292,8 +304,23 @@ class AStarAlgorithm:
     def create_grid(self) -> None:
         pass
     
-    def update_node(self) -> None:
-        pass
+    def update_node(self,node:GridNode,tempnode:GridNode) -> None:
+        #node.location = tempnode.location
+        node.direction = tempnode.direction
+        node.parent = tempnode.parent
+        node.goalpath_parent = tempnode.goalpath_parent
+        node.goalpath_child = tempnode.goalpath_child
+        node.LOSpath_parent = tempnode.LOSpath_parent
+        node.edgelength = tempnode.edgelength
+        node.edgecost = tempnode.edgecost
+        node.f_cost = tempnode.f_cost
+        node.g_cost = tempnode.g_cost
+        node.h_cost = tempnode.h_cost
+        node.lowriskzone_cnt = tempnode.lowriskzone_cnt
+        node.mediumriskzone_cnt = tempnode.mediumriskzone_cnt
+        node.highriskzone_cnt = tempnode.highriskzone_cnt
+        node.riskzones = tempnode.riskzones
+        node.risk_multiplier = tempnode.risk_multiplier
     
     # determine if node is in riskzone (low, medium, high)
     # note: safetymargin is connected to safetymargin in cross_circle()
@@ -428,6 +455,11 @@ class AStarAlgorithm:
             while node.location not in self.start_locations:
                 # list of all nodes in goalpath
                 goalpath.nodes.insert(0,node)
+                # todo  debug
+                if node.location == (320,10):
+                    ic(node.location)
+                    ic(node.parent)
+                
                 # update goalpath riskzones, only if higher risk
                 self.update_gridpath_riskzones(node,goalpath)
                 # previousnode moves 1 up the line through parent of node
@@ -496,7 +528,7 @@ class AStarAlgorithm:
             goalpath.transition_nodes.append(goalpath.startnode)
             templist = [(node.location,node.risk_multiplier) for node in goalpath.transition_nodes]
             ic(templist)            # todo debug
-            templist2 = [(node.location,node.risk_multiplier) for node in goalpath.nodes]
+            templist2 = [(node.location,node.risk_multiplier,node.riskzones) for node in goalpath.nodes]
             ic(templist2)            # todo debug
             # copy list for use later
             transition_nodes_list = goalpath.transition_nodes.copy()
