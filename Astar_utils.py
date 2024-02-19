@@ -1,7 +1,5 @@
 import math
-import copy
 from icecream import ic
-from route_opt_utils import CircleObstacle
 
 
 
@@ -116,7 +114,7 @@ def dist_node_riskzone(node:GridNode,riskzones:list[RiskZone]) -> float:
 # check if connection between 2 nodes crosses a riskzone
 def cross_riskzone(node1:GridNode,
                    node2:GridNode,
-                   riskzones: CircleObstacle,
+                   riskzones: RiskZone,
                    goalpath:GridPath,
                    SAFETYMARGIN:int
                    ) -> bool:
@@ -136,7 +134,7 @@ def cross_riskzone(node1:GridNode,
 # check whether a line between two nodes crosses a circle
 def cross_circle(node1:GridNode,
                  node2:GridNode,
-                 circle:CircleObstacle,
+                 circle:RiskZone,
                  radius_multiplier:float,
                  SAFETYMARGIN: int
                  ) -> bool:

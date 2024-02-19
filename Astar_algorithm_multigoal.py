@@ -107,17 +107,17 @@ class AStarAlgorithm:
             # or create new node if no node exists
             # check if goal found at new location
             for location_edge_dir in new_gridpoints:
-                # new location and edge of gridpoint
+                # new location, edge and direction of gridpoint
                 new_location = (location_edge_dir[0],location_edge_dir[1])
                 new_edge = location_edge_dir[2]
-                direction = location_edge_dir[3]
+                new_direction = location_edge_dir[3]
                 # if not within map dimenstions, continue to next gridpoint
                 if not is_within_mapdimensions(new_location,self.mapdimensions):
                     continue
-                # create tempnode at gridpoint
+                # create temporary node at gridpoint
                 tempnode = GridNode(new_location)
                 tempnode.edgelength = new_edge
-                tempnode.direction = direction
+                tempnode.direction = new_direction
                 # set riskzone count and multiplier for tempnode
                 self.set_node_riskzones(tempnode)
                 self.set_edge_riskzones(tempnode,qnode)
@@ -168,35 +168,35 @@ class AStarAlgorithm:
         location_edge_dir_north     = (qnode.location[0], 
                                        qnode.location[1] + grid_step, 
                                        grid_step,
-                                       "N")
+                                       0)
         location_edge_dir_northeast = (qnode.location[0] + grid_step, 
                                        qnode.location[1] + grid_step, 
                                        math.sqrt(2) * grid_step,
-                                       "NE")
+                                       45)
         location_edge_dir_east      = (qnode.location[0] + grid_step, 
                                        qnode.location[1], 
                                        grid_step,
-                                       "E")
+                                       90)
         location_edge_dir_southeast = (qnode.location[0] + grid_step, 
                                        qnode.location[1] - grid_step, 
                                        math.sqrt(2) * grid_step,
-                                       "SE")
+                                       135)
         location_edge_dir_south     = (qnode.location[0], 
                                        qnode.location[1] - grid_step, 
                                        grid_step,
-                                       "S")
+                                       180)
         location_edge_dir_southwest = (qnode.location[0] - grid_step, 
                                        qnode.location[1] - grid_step, 
                                        math.sqrt(2) * grid_step,
-                                       "SW")
+                                       225)
         location_edge_dir_west      = (qnode.location[0] - grid_step, 
                                        qnode.location[1], 
                                        grid_step,
-                                       "W")
+                                       270)
         location_edge_dir_northwest = (qnode.location[0] - grid_step, 
                                        qnode.location[1] + grid_step, 
                                        math.sqrt(2) * grid_step,
-                                       "NW")
+                                       315)
         # add values to list
         new_gridpoints.append(location_edge_dir_north)
         new_gridpoints.append(location_edge_dir_northeast)
