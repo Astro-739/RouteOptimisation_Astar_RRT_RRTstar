@@ -36,14 +36,14 @@ class GridPath:
         self.highlightnode = None       # todo  debug
         self.transition_nodes = []
 
-#? double stepsize when far from riskzone
-#? store direction (eg. NW) for node to use later for waypoint reduction
-#? remove outside node and check for better result
-#? calc LOS path cost or assume same as goalpath?
-#? explain extra_clearance in create obstacles
-#? move from obstacles to riskzones
-#? make provisions for LORAD 
-#? check goal found not first of 8, but best of 8
+
+class RiskZone:    
+    def __init__(self,location:tuple[int],radius:(int)) -> None:
+        self.id = None
+        self.location = location
+        self.radius = radius
+        self.type = None
+
 
 
 def create_grid(self) -> None:
@@ -79,13 +79,12 @@ def is_existing_gridnode(location:tuple[int],gridnodes:list[GridNode]) -> GridNo
     return None
 
 
-# todo used anywhere?
-# check if node is in free space or within circle obstacle
-def is_freespace(location:tuple[int]) -> bool:
+# check if node is in free space or within riskzone
+def is_freespace(location:tuple[int],riskzones:list[RiskZone],SAFETYMARGIN:int) -> bool:
     # check for all obstacles
-    for riskzone in self.obstacles:
+    for riskzone in riskzones:
         # collision when point is within circle radius + margin
-        if math.dist(location,riskzone.location) < (riskzone.radius + self.SAFETYMARGIN):
+        if math.dist(location,riskzone.location) < (riskzone.radius + SAFETYMARGIN):
             return False
     # no collision detected
     return True
@@ -103,12 +102,12 @@ def is_within_mapdimensions(location:tuple[int],mapdimensions:tuple[int]) -> boo
     return True
 
 
-# todo distance from node to closest riskzone edge
-def dist_node_riskzone(node:GridNode) -> float:
+# distance from node to closest riskzone edge
+def dist_node_riskzone(node:GridNode,riskzones:list[RiskZone]) -> float:
     # init
     dist = []
     # check for all obstacles
-    for riskzone in self.obstacles:
+    for riskzone in riskzones:
         # distance from node to outer edge of riskzone
         dist.append(math.dist(node.location,riskzone.location) - riskzone.radius)
     return min(dist)

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from icecream import ic
 from Astar_algorithm_multigoal import AStarAlgorithm
 from draw_map_multigoal import RoutingMap_matplotlib
-from create_obstacles import make_circle_riskzones, read_circle_riskzones
+from create_riskzones import make_circle_riskzones, read_circle_riskzones
 
 
 
@@ -15,15 +15,15 @@ def main():
     start_locations = [(10,100),(10,500),(10,900)]
     goal_locations = [(800,700),(605,210),(305,408),(205,811),(503,905),(860,235)]
     # number of obstacle
-    num_obstacles = 12
+    num_riskzones = 12
     # (min,max) radius
-    obstacleradius = (50,200)
+    riskzone_radius = (50,200)
     # Astar algorithm stepsize
     stepsize = 40
     
     riskzones = make_circle_riskzones(mapdimensions,
-                                      obstacleradius,
-                                      num_obstacles)
+                                      riskzone_radius,
+                                      num_riskzones)
     
     #riskzones = read_circle_riskzones()
     

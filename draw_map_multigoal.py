@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from Astar_utils import GridNode, GridPath
-from route_opt_utils import CircleObstacle
+from Astar_utils import GridNode, GridPath, RiskZone
 
 
 class RoutingMap_matplotlib:
@@ -9,12 +8,12 @@ class RoutingMap_matplotlib:
                  start_locations:list[int],
                  goal_locations:list[int],
                  mapdimensions:tuple[int],
-                 obstacles:list[CircleObstacle]
+                 riskzones:list[RiskZone]
                  ) -> None:
         self.start_locations = start_locations
         self.goal_locations = goal_locations
         self.MAPWIDTH,self.MAPHEIGHT = mapdimensions
-        self.obstacles = obstacles
+        self.riskzones = riskzones
     
         #colours
         self.GREY = (0.6,0.6,0.6)
@@ -38,7 +37,7 @@ class RoutingMap_matplotlib:
         self.ax1.set_title("Multiple goal A* algorithm on risk zone map")
         self.ax2.set_title("Goal path Line of Sight optimisation")
 
-    # draw base map with start and goal locations and obstacles
+    # draw base map with start and goal locations and riskzones
     def draw_basemap(self) -> None:
         # plot start location
         for start_location in self.start_locations:
@@ -48,8 +47,8 @@ class RoutingMap_matplotlib:
         for goal_location in self.goal_locations:
             self.ax1.scatter(goal_location[0],goal_location[1],color=self.GREEN,s=300,marker="o")
             self.ax2.scatter(goal_location[0],goal_location[1],color=self.GREEN,s=300,marker="o")
-        # plot circle obstacles
-        for circle in self.obstacles:
+        # plot circle riskzones
+        for circle in self.riskzones:
             circle1 = plt.Circle(circle.location,circle.radius,
                                 color=self.RED,lw=2,fill=False)
             circle2 = plt.Circle(circle.location,circle.radius,

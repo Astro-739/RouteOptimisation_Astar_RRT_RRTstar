@@ -13,7 +13,7 @@ from Astar_utils import cross_riskzone, cross_circle
 #? remove outside node and check for better result
 #? calc LOS path cost or assume same as goalpath?
 #? explain extra_clearance in create obstacles
-#? move from obstacles to riskzones
+#? move from riskzones to riskzones
 #? make provisions for LORAD 
 #? check goal found not first of 8, but best of 8
 
@@ -21,13 +21,13 @@ class AStarAlgorithm:
     def __init__(self,
                  start_locations:list[int],
                  goal_locations:list[int],
-                 obstacles:list[CircleObstacle],
+                 riskzones:list[CircleObstacle],
                  mapdimensions:tuple[int],
                  stepsize:int
                  ) -> None:
         self.start_locations = start_locations
         self.goal_locations = goal_locations
-        self.obstacles = obstacles
+        self.riskzones = riskzones
         self.mapdimensions = mapdimensions
         self.mapheight,self.mapwidth = mapdimensions
         self.STEPSIZE = stepsize
@@ -271,8 +271,8 @@ class AStarAlgorithm:
         LOWRISK_RADIUS_MULTIPLIER = 0.8         # todo set as global?
         MEDIUMRISK_RADIUS_MULTIPLIER = 0.5
         HIGHRISK_RADIUS_MULTIPLIER = 0.0
-        # check for all obstacles
-        for riskzone in self.obstacles:
+        # check for all riskzones
+        for riskzone in self.riskzones:
             # distance between node location and centre of circle
             dist = math.dist(node.location,riskzone.location)
             # if outside cirle, continue
@@ -318,8 +318,8 @@ class AStarAlgorithm:
     # determine edge riskzones and update node riskzones 
     # when nodes are in the same riskzone and only the edge crosses another zone
     def set_edge_riskzones(self,node1:GridNode,node2:GridNode) -> None:
-        # check for all obstacles
-        for circle in self.obstacles:
+        # check for all riskzones
+        for circle in self.riskzones:
             # edge check only if node1 and node2 are in the same riskzone
             if node1.riskzones.get(circle.location) is not node2.riskzones.get(circle.location):
                 continue
@@ -440,7 +440,7 @@ class AStarAlgorithm:
                 while LOS_basenode.location is not node.location:
                     # if node has LOS with basenode, add it to the LOS path
                     # node then becomes the next LOS basenode
-                    if not cross_riskzone(node,LOS_basenode,self.obstacles,
+                    if not cross_riskzone(node,LOS_basenode,self.riskzones,
                                           LOS_localpath,self.SAFETYMARGIN):
                         # node and LOS basenode become each others parent and child
                         LOS_basenode.LOSpath_parent = node
