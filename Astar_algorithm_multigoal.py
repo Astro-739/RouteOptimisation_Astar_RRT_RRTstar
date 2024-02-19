@@ -12,8 +12,6 @@ from Astar_utils import cross_riskzone, cross_circle
 #? store direction (eg. NW) for node to use later for waypoint reduction
 #? remove outside node and check for better result
 #? calc LOS path cost or assume same as goalpath?
-#? explain extra_clearance in create obstacles
-#? move from riskzones to riskzones
 #? make provisions for LORAD 
 #? check goal found not first of 8, but best of 8
 
