@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
-from AStar_algorithm_multi import GridNode,GridPath
+from Astar_utils import GridNode, GridPath
 from route_opt_utils import CircleObstacle
 
 

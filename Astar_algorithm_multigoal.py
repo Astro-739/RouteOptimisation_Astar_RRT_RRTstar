@@ -2,40 +2,12 @@ import math
 import copy
 from icecream import ic
 from route_opt_utils import CircleObstacle
+from Astar_utils import GridNode, GridPath
+from Astar_utils import update_node, is_existing_gridnode, is_within_mapdimensions
+from Astar_utils import cross_riskzone, cross_circle
 
-
-
-class GridNode:
-    def __init__(self,location:tuple) -> None:
-        self.location = location
-        self.direction = None
-        self.parent = None
-        self.goalpath_parent = None
-        self.goalpath_child = None
-        self.LOSpath_parent = None
-        self.edgelength = 0.0 
-        self.edgecost = 100000.0     # edge from parent
-        self.f_cost = 100000.0 
-        self.g_cost = 100000.0 
-        self.h_cost = 100000.0 
-        self.lowriskzone_cnt = 0
-        self.mediumriskzone_cnt = 0
-        self.highriskzone_cnt = 0
-        self.riskzones = {}
-        self.risk_multiplier = 1
-
-
-class GridPath:
-    def __init__(self,goalnode:GridNode) -> None:
-        self.startnode = None
-        self.goalnode = goalnode
-        self.nodes = []
-        self.path_f_cost = 0
-        self.riskzones = {}
-        self.goal_riskzones = {}        # todo  how to use?
-        self.highlightnode = None       # todo  debug
-        self.transition_nodes = []
-
+        
+        
 #? double stepsize when far from riskzone
 #? store direction (eg. NW) for node to use later for waypoint reduction
 #? remove outside node and check for better result
@@ -43,7 +15,6 @@ class GridPath:
 #? explain extra_clearance in create obstacles
 #? move from obstacles to riskzones
 #? make provisions for LORAD 
-#? branch out to 4 "start nodes"
 #? check goal found not first of 8, but best of 8
 
 class AStarAlgorithm:
@@ -57,6 +28,7 @@ class AStarAlgorithm:
         self.start_locations = start_locations
         self.goal_locations = goal_locations
         self.obstacles = obstacles
+        self.mapdimensions = mapdimensions
         self.mapheight,self.mapwidth = mapdimensions
         self.STEPSIZE = stepsize
         # safety margin to prevent a path touching the riskzone
@@ -121,7 +93,7 @@ class AStarAlgorithm:
             # if conditions are met, child nodes are generated on the gridpoints
             new_children = []
             step_multiplier = 1
-            #dist = self.dist_node_riskzone(qnode)
+            #dist = dist_node_riskzone(qnode)
             #if dist > 5 * self.STEPSIZE:
             #    step_multiplier = 2
             grid_step = step_multiplier * self.STEPSIZE
@@ -140,7 +112,7 @@ class AStarAlgorithm:
                 new_location = (location_and_edge[0],location_and_edge[1])
                 new_edge = location_and_edge[2]
                 # if not within map dimenstions, continue to next gridpoint
-                if not self.is_within_mapdimensions(new_location):
+                if not is_within_mapdimensions(new_location,self.mapdimensions):
                     continue
                 # create tempnode at gridpoint
                 tempnode = GridNode(new_location)
@@ -156,7 +128,7 @@ class AStarAlgorithm:
                 self.calc_f_cost(tempnode)
                 # check for existing node on this location
                 # if node exists, it is on openlist or closedlist
-                node:GridNode = self.existing_gridnode(new_location)
+                node:GridNode = is_existing_gridnode(new_location,self.gridnodes)
                 # if existing node and f_cost lower than tempnode, 
                 # leave as is, go to next point
                 if node is not None and node.f_cost <= tempnode.f_cost:
@@ -164,7 +136,7 @@ class AStarAlgorithm:
                 # if existing node and f_cost higher than tempnode,
                 # update node
                 if node is not None and node.f_cost > tempnode.f_cost:
-                    self.update_node(node,tempnode)
+                    node = update_node(node,tempnode)
                     node.parent = qnode
                 # if node does not exist, make new node
                 if node is None:
@@ -289,27 +261,6 @@ class AStarAlgorithm:
         # return updated goalnode_list
         return goalnode_list
 
-    def create_grid(self) -> None:
-        pass
-    
-    def update_node(self,node:GridNode,tempnode:GridNode) -> None:
-        #node.location = tempnode.location
-        node.direction = tempnode.direction
-        node.parent = tempnode.parent
-        node.goalpath_parent = tempnode.goalpath_parent
-        node.goalpath_child = tempnode.goalpath_child
-        node.LOSpath_parent = tempnode.LOSpath_parent
-        node.edgelength = tempnode.edgelength
-        node.edgecost = tempnode.edgecost
-        node.f_cost = tempnode.f_cost
-        node.g_cost = tempnode.g_cost
-        node.h_cost = tempnode.h_cost
-        node.lowriskzone_cnt = tempnode.lowriskzone_cnt
-        node.mediumriskzone_cnt = tempnode.mediumriskzone_cnt
-        node.highriskzone_cnt = tempnode.highriskzone_cnt
-        node.riskzones = tempnode.riskzones
-        node.risk_multiplier = tempnode.risk_multiplier
-    
     # determine if node is in riskzone (low, medium, high)
     # note: safetymargin is connected to safetymargin in cross_circle()
     def set_node_riskzones(self,node:GridNode) -> None:
@@ -378,7 +329,7 @@ class AStarAlgorithm:
                 radius_multiplier = node1.riskzones.get(circle.location)
             # check if edge crosses riskzone while nodes are not in riskzone
             # and update radius multiplier
-            if self.cross_circle(node1,node2,circle,radius_multiplier):
+            if cross_circle(node1,node2,circle,radius_multiplier,self.SAFETYMARGIN):
                 if radius_multiplier == 0.5:
                     radius_multiplier = 0.0
                 if radius_multiplier == 0.8:
@@ -390,45 +341,6 @@ class AStarAlgorithm:
                 # todo check
                 print("cross riskzone edge")
 
-    # check if is existing gridnode
-    def existing_gridnode(self,location:tuple[int]) -> GridNode | None:
-        gridnode:GridNode
-        for gridnode in self.gridnodes:
-            if gridnode.location == location:
-                return gridnode
-        return None
-
-    # todo used anywhere?
-    # check if node is in free space or within circle obstacle
-    def is_freespace(self,location:tuple[int]) -> bool:
-        # check for all obstacles
-        for riskzone in self.obstacles:
-            # collision when point is within circle radius + margin
-            if math.dist(location,riskzone.location) < (riskzone.radius + self.SAFETYMARGIN):
-                return False
-        # no collision detected
-        return True
-    
-    def is_within_mapdimensions(self,location:tuple[int]) -> bool:
-        # initialise
-        x_map,y_map = location
-        # check within map dimensions
-        if x_map < 0 or x_map > self.mapwidth:
-            return False
-        if y_map < 0 or y_map > self.mapheight:
-            return False
-        return True
-
-    # distance from node to closest riskzone edge
-    def dist_node_riskzone(self,node:GridNode) -> float:
-        # init
-        dist = []
-        # check for all obstacles
-        for riskzone in self.obstacles:
-            # distance from node to outer edge of riskzone
-            dist.append(math.dist(node.location,riskzone.location) - riskzone.radius)
-        return min(dist)
-            
     # build all paths to goal if goals have been found
     def create_goalpaths(self) -> bool:
         # check goalfound
@@ -456,10 +368,8 @@ class AStarAlgorithm:
             goalpath.startnode = node
             # update goalpath riskzones for startnode
             self.update_gridpath_riskzones(node,goalpath)
-            ic(goalpath.riskzones)      # todo
             # add goalpath to total list of goalpaths
             self.goalpaths.append(goalpath)
-            ic(len(self.goalpaths))     # todo
         # print results                
         print(f"{len(self.goalpaths)} goalpaths generated")
         return True
@@ -487,7 +397,6 @@ class AStarAlgorithm:
         # create LOS path for each goalpath
         goalpath:GridPath       # todo declare in for statement?
         for goalpath in self.goalpaths:
-            ic(goalpath.riskzones)     # todo debug
             # mark all transitions in goalpath from inside to outside of a riskzone
             # and from outside to inside of a riskzone
             node:GridNode = goalpath.goalnode
@@ -527,12 +436,12 @@ class AStarAlgorithm:
                     stepnode = previousnode
                 # include last node, mainly when node is startnode
                 self.update_gridpath_riskzones(stepnode,LOS_localpath)
-                ic(LOS_localpath.riskzones)     # todo debug
                 # Line of Sight checks
                 while LOS_basenode.location is not node.location:
                     # if node has LOS with basenode, add it to the LOS path
                     # node then becomes the next LOS basenode
-                    if not self.cross_riskzone(node,LOS_basenode,LOS_localpath):
+                    if not cross_riskzone(node,LOS_basenode,self.obstacles,
+                                          LOS_localpath,self.SAFETYMARGIN):
                         # node and LOS basenode become each others parent and child
                         LOS_basenode.LOSpath_parent = node
                         # node becomes next LOSbasenode
@@ -546,7 +455,6 @@ class AStarAlgorithm:
                     if node.location == LOS_basenode.location:
                         print("node == LOS_basenode")   # todo
                         break
-            print("next LOS goalpath")
         # LOS path accessed through LOS path goalnode
         # set LOS path cost
         #?self.pathCostLOS(latestgoalnode)
@@ -583,9 +491,6 @@ class AStarAlgorithm:
                 # node moves 1 up the line
                 previousnode = node.goalpath_parent
                 node = previousnode
-
-            ic(goalpath.riskzones)     # todo debug
-
             # set outside node as first LOS path node after goalnode
             goalpath.goalnode.LOSpath_parent = outsidenode
             goalpath.highlightnode = outsidenode    # todo debug
@@ -609,7 +514,6 @@ class AStarAlgorithm:
                 if node.location == LOS_basenode.location:
                     print("node == LOS_basenode")   # todo
                     break
-            print("next LOS goalpath")
         # LOS path accessed through LOS path goalnode
         # set LOS path cost
         #?self.pathCostLOS(latestgoalnode)
@@ -651,53 +555,8 @@ class AStarAlgorithm:
                 if node.location == LOS_basenode.location:
                     print("node == LOS_basenode")   # todo
                     break
-            print("next LOS goalpath")
         # LOS path accessed through LOS path goalnode
         # set LOS path cost
         #?self.pathCostLOS(latestgoalnode)
         print("LOS_goalpaths calculated")
         return True
-
-    # check if connection crosses a riskzone for 2 nodes
-    def cross_riskzone(self,node1:GridNode,node2:GridNode,goalpath:GridPath) -> bool:
-        # check for all obstacles
-        for circle in self.obstacles:
-            # get radius_multiplier
-            radius_multiplier = 1.0
-            if circle.location in goalpath.riskzones:
-                radius_multiplier = goalpath.riskzones.get(circle.location)
-            # check if cross circle
-            if self.cross_circle(node1,node2,circle,radius_multiplier):
-                return True
-        # no collision detected
-        return False
-
-    # check whether a line between two nodes crosses a circle
-    def cross_circle(self,
-                     node1:GridNode,
-                     node2:GridNode,
-                     circle:CircleObstacle,
-                     radius_multiplier:float
-                     ) -> bool:
-        # circle radius is zero
-        if radius_multiplier == 0.0:
-            return False
-        # check if line is far enough away from circle to not cross
-        line_length = math.dist(node1.location,node2.location)
-        dist1 = math.dist(node1.location,circle.location)
-        dist2 = math.dist(node2.location,circle.location)
-        if ((dist1 or dist2) 
-             > (line_length + (circle.radius * radius_multiplier + self.SAFETYMARGIN))):
-            return False
-        # when line is close to circle
-        # divide connection in 100 points to check each
-        for i in range(0,101):
-            u = i/100                   
-            x = node1.location[0] * u + node2.location[0] * (1-u)
-            y = node1.location[1] * u + node2.location[1] * (1-u)
-            # collision when point is within circle radius + safety margin
-            if (math.dist((x,y),(circle.location)) 
-                < ((circle.radius * radius_multiplier + self.SAFETYMARGIN))):
-                return True             
-        # no collision detected
-        return False

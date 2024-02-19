@@ -1,8 +1,8 @@
 import time
 import matplotlib.pyplot as plt
 from icecream import ic
-from AStar_algorithm_multi import AStarAlgorithm
-from draw_map_multi import RoutingMap_matplotlib
+from Astar_algorithm_multigoal import AStarAlgorithm
+from draw_map_multigoal import RoutingMap_matplotlib
 from create_obstacles import make_circle_riskzones, read_circle_riskzones
 
 
@@ -25,7 +25,7 @@ def main():
                                       obstacleradius,
                                       num_obstacles)
     
-    riskzones = read_circle_riskzones()
+    #riskzones = read_circle_riskzones()
     
     astar = AStarAlgorithm(start_locations,
                            goal_locations,
