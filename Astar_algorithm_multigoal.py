@@ -1,25 +1,26 @@
 import math
 import copy
 from icecream import ic
-from route_opt_utils import CircleObstacle
-from Astar_utils import GridNode, GridPath
+from Astar_utils import GridNode, GridPath, RiskZone
 from Astar_utils import update_node, is_existing_gridnode, is_within_mapdimensions
 from Astar_utils import cross_riskzone, cross_circle
 
-        
+
         
 #? double stepsize when far from riskzone
-#? store direction (eg. NW) for node to use later for waypoint reduction
 #? remove outside node and check for better result
 #? calc LOS path cost or assume same as goalpath?
 #? make provisions for LORAD 
 #? check goal found not first of 8, but best of 8
+#? start locations independent of grid position
+#? try LOS farther from riskone, else safetymargin
+
 
 class AStarAlgorithm:
     def __init__(self,
                  start_locations:list[int],
                  goal_locations:list[int],
-                 riskzones:list[CircleObstacle],
+                 riskzones:list[RiskZone],
                  mapdimensions:tuple[int],
                  stepsize:int
                  ) -> None:
@@ -346,8 +347,6 @@ class AStarAlgorithm:
                     radius_multiplier = 0.8
                 # update node1 riskzone to account for edge crossing riskzone
                 node1.riskzones.update({circle.location:radius_multiplier})
-                # todo check
-                print("cross riskzone edge")
 
     # build all paths to goal if goals have been found
     def create_goalpaths(self) -> bool:
