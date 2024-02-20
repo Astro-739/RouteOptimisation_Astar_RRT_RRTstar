@@ -127,9 +127,17 @@ class AStarAlgorithm:
                 self.calc_g_cost(tempnode,qnode)
                 self.calc_h_cost(tempnode)
                 self.calc_f_cost(tempnode)
+                # todo debug
+                if tempnode.location == (530,220):
+                    ic([tempnode.location,tempnode.riskzones,qnode.location,tempnode.f_cost])
+                    
                 # check for existing node on this location
                 # if node exists, it is on openlist or closedlist
                 node:GridNode = is_existing_gridnode(new_location,self.gridnodes)
+                # todo debug
+                if node is not None and node.location == (530,220):
+                    ic([node.location,node.riskzones,node.parent.location,node.f_cost])
+                
                 # if existing node and f_cost lower than tempnode, 
                 # leave as is, go to next point
                 if node is not None and node.f_cost <= tempnode.f_cost:
@@ -145,12 +153,11 @@ class AStarAlgorithm:
                     node.parent = qnode
                     self.gridnodes.append(node)
                     new_children.append(node)
-                # check if goal found and update goalnode_list
-                #goalnode_list = self.check_goal_found(node,goalnode_list)
-                # set goal found flag true when all goals found
-                #if len(goalnode_list) == 0:
-                #    self.goalfound = True
-                #    print("all goals found")
+                # todo debug
+                #if node is not None and node.location == (530,220):
+                #    ic([node.location,node.riskzones,node.parent.location,node.f_cost])
+
+
             # check if goal found and update goalnode_list
             goalnode_list = self.check_goal_found(new_children,goalnode_list)
             if len(goalnode_list) == 0:
@@ -264,6 +271,10 @@ class AStarAlgorithm:
                 if dist < GOALRADIUS and dist < min_dist:
                     min_dist = dist
                     node_goalfound = node
+                # todo debug
+                if node is not None and node.location == (530,220):
+                    ic([node.location,node.riskzones,node.parent.location,node.f_cost])
+
             # check if goal was found, if so, set properties
             if node_goalfound is not None:
                 # node_goalfound becomes parent of goalnode
@@ -277,6 +288,12 @@ class AStarAlgorithm:
                 self.calc_f_cost(goalnode)
                 # remove found goal from list
                 goalnode_list.remove(goalnode)
+                # todo debug
+                if node_goalfound is not None and node_goalfound.location == (530,220):
+                    ic([node_goalfound.location,node_goalfound.riskzones,node_goalfound.parent.location,node_goalfound.f_cost])
+                #! node gets higher risk before goalfound
+                #! then gets overwritten later because other goals need to be found
+                #! overwriting causes riskzones to be screwed up
         # return updated goalnode_list
         return goalnode_list
 
@@ -356,6 +373,9 @@ class AStarAlgorithm:
                 if radius_multiplier == 1.0:
                     radius_multiplier = 0.8
                 # update node1 riskzone to account for edge crossing riskzone
+                #! node1 is first node before edge crossing
+                #! why not node2?
+                #! this gets overwritten somehow with qnode/tempnode/existing node
                 node1.riskzones.update({circle.location:radius_multiplier})
 
     # build all paths to goal if goals have been found
@@ -372,8 +392,9 @@ class AStarAlgorithm:
                 # list of all nodes in goalpath
                 goalpath.nodes.insert(0,node)
                 # update goalpath riskzones, only if higher risk
+                ic(node.location,node.riskzones)      # todo debug
                 self.update_gridpath_riskzones(node,goalpath)
-                ic(node.riskzones)      # todo debug
+                ic(node.location,node.riskzones)      # todo debug
                 # previousnode moves 1 up the line through parent of node
                 # nodes are copied for each path to be able to use Line of Sight (LOS) optimisation later
                 previousnode:GridNode = copy.deepcopy(node.parent)

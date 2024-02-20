@@ -46,7 +46,7 @@ def read_circle_riskzones() -> list[RiskZone]:
     dict63:dict = {(571, 729): 75, (328, 605): 117, (560, 400): 154, (563, 184): 82, (825, 690): 71, (873, 660): 163, (623, 121): 70, (695, 514): 133, (630, 103): 106, (417, 80): 151, (815, 661): 197, (908, 865): 93}
     # init
     riskzones = []
-    for item in dict22.items():
+    for item in dict63.items():
         riskzone = RiskZone(item[0],item[1])
         riskzones.append(riskzone)
     # return result
