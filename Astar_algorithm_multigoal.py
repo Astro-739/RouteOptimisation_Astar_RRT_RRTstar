@@ -146,14 +146,18 @@ class AStarAlgorithm:
                     self.gridnodes.append(node)
                     new_children.append(node)
                 # check if goal found and update goalnode_list
-                goalnode_list = self.check_goal_found(node,goalnode_list)
+                #goalnode_list = self.check_goal_found(node,goalnode_list)
                 # set goal found flag true when all goals found
-                if len(goalnode_list) == 0:
-                    self.goalfound = True
-                    print("all goals found")
+                #if len(goalnode_list) == 0:
+                #    self.goalfound = True
+                #    print("all goals found")
+            # check if goal found and update goalnode_list
+            goalnode_list = self.check_goal_found(new_children,goalnode_list)
+            if len(goalnode_list) == 0:
+                self.goalfound = True
+                print("all goals found")
             # put all new nodes on openlist
-            for child in new_children:
-                self.openlist.append(child)
+            [self.openlist.append(child) for child in new_children]
             # qnode goes to closedlist
             self.closedlist.append(qnode)
         # print final status
@@ -241,32 +245,44 @@ class AStarAlgorithm:
         # using Euclidian distance for now (diagonal distance not very distinct in this grid)
         node.h_cost = min([math.dist(node.location,location) for location in self.goal_locations])
     
-    def check_goal_found(self,node:GridNode,goalnode_list:list[GridNode]) -> list[GridNode]:
+    def check_goal_found(self,
+                         node_list:list[GridNode],
+                         goalnode_list:list[GridNode]
+                         ) -> list[GridNode]:
         # radius goal found
         GOALRADIUS = 2 * self.STEPSIZE
-        goalnode:GridNode
-        # check goal found for each goal location left on goalnode_list
+        # check goal found for each goal location on goalnode_list
         for goalnode in goalnode_list:
-            dist = math.dist(node.location,goalnode.location)
-            # goal found when node is closer than goalradius from goalnode
-            if dist > 0 and dist < GOALRADIUS:
-                # node becomes parent of goalnode
-                goalnode.parent = node
-                goalnode.edgelength = dist
-                self.set_edge_riskzones(node,goalnode)
+            # init
+            min_dist = 10000.0
+            node_goalfound = None
+            # check goal found for each node on node_list
+            for node in node_list:
+                dist = math.dist(node.location,goalnode.location)
+                # goal found when node is closer than goalradius from goalnode
+                # and find node closest to goal
+                if dist < GOALRADIUS and dist < min_dist:
+                    min_dist = dist
+                    node_goalfound = node
+            # check if goal was found, if so, set properties
+            if node_goalfound is not None:
+                # node_goalfound becomes parent of goalnode
+                goalnode.parent = node_goalfound
+                goalnode.edgelength = min_dist
+                self.set_edge_riskzones(node_goalfound,goalnode)
                 # calculate costs for goalnode based on risk multiplier
                 self.calc_edge_cost(goalnode)
-                self.calc_g_cost(goalnode,node)
+                self.calc_g_cost(goalnode,node_goalfound)
                 goalnode.h_cost = 0
                 self.calc_f_cost(goalnode)
                 # remove found goal from list
                 goalnode_list.remove(goalnode)
             # case for when node is exactly on goalnode location
-            if dist == 0: 
+            #if dist == 0: 
                 # goalnode gets all attributes from node
-                goalnode = node
+            #    goalnode = node
                 # remove found goal from list
-                goalnode_list.remove(goalnode)
+            #    goalnode_list.remove(goalnode)
         # return updated goalnode_list
         return goalnode_list
 
@@ -363,6 +379,7 @@ class AStarAlgorithm:
                 goalpath.nodes.insert(0,node)
                 # update goalpath riskzones, only if higher risk
                 self.update_gridpath_riskzones(node,goalpath)
+                ic(node.riskzones)      # todo debug
                 # previousnode moves 1 up the line through parent of node
                 # nodes are copied for each path to be able to use Line of Sight (LOS) optimisation later
                 previousnode:GridNode = copy.deepcopy(node.parent)
@@ -377,6 +394,7 @@ class AStarAlgorithm:
             self.update_gridpath_riskzones(node,goalpath)
             # add goalpath to total list of goalpaths
             self.goalpaths.append(goalpath)
+            ic(goalpath.riskzones)      # todo debug
         # print results                
         print(f"{len(self.goalpaths)} goalpaths generated")
         return True
