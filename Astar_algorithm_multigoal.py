@@ -120,11 +120,11 @@ class AStarAlgorithm:
                 tempnode.direction = new_direction
                 # set riskzone count and multiplier for tempnode
                 self.set_node_riskzones(tempnode)
-                self.set_edge_riskzones(tempnode,qnode)
+                self.set_edge_riskzones(qnode,tempnode)
                 self.set_node_riskmultiplier(tempnode)
                 # calculate costs based on risk multiplier
                 self.calc_edge_cost(tempnode)
-                self.calc_g_cost(tempnode,qnode)
+                self.calc_g_cost(tempnode,qnode)    #! check volgorde
                 self.calc_h_cost(tempnode)
                 self.calc_f_cost(tempnode)
                 # todo debug
@@ -353,6 +353,7 @@ class AStarAlgorithm:
     
     # determine edge riskzones and update node riskzones 
     # when nodes are in the same riskzone and only the edge crosses another zone
+    # node1 is node before edge crossing riskzone, node2 after, in direction of goal
     def set_edge_riskzones(self,node1:GridNode,node2:GridNode) -> None:
         # check for all riskzones
         for circle in self.riskzones:
@@ -361,8 +362,8 @@ class AStarAlgorithm:
                 continue
             # get current radius multiplier
             radius_multiplier = 1.0
-            if circle.location in node1.riskzones:
-                radius_multiplier = node1.riskzones.get(circle.location)
+            if circle.location in node2.riskzones:
+                radius_multiplier = node2.riskzones.get(circle.location)
             # check if edge crosses riskzone while nodes are not in riskzone
             # and update radius multiplier
             if cross_circle(node1,node2,circle,radius_multiplier,self.SAFETYMARGIN):
@@ -372,11 +373,13 @@ class AStarAlgorithm:
                     radius_multiplier = 0.5
                 if radius_multiplier == 1.0:
                     radius_multiplier = 0.8
-                # update node1 riskzone to account for edge crossing riskzone
+                # update node2 riskzone to account for edge crossing riskzone
+                # node2 is node after edge crossed riskzone in direction of goal
                 #! node1 is first node before edge crossing
                 #! why not node2?
                 #! this gets overwritten somehow with qnode/tempnode/existing node
-                node1.riskzones.update({circle.location:radius_multiplier})
+                #todo also update goalpath because lower/higher f_cost
+                node2.riskzones.update({circle.location:radius_multiplier})
 
     # build all paths to goal if goals have been found
     def create_goalpaths(self) -> bool:
