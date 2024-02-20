@@ -277,12 +277,6 @@ class AStarAlgorithm:
                 self.calc_f_cost(goalnode)
                 # remove found goal from list
                 goalnode_list.remove(goalnode)
-            # case for when node is exactly on goalnode location
-            #if dist == 0: 
-                # goalnode gets all attributes from node
-            #    goalnode = node
-                # remove found goal from list
-            #    goalnode_list.remove(goalnode)
         # return updated goalnode_list
         return goalnode_list
 
