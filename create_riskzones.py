@@ -57,14 +57,14 @@ def read_circle_riskzones() -> list[RiskZone]:
 
 # generate random location for centre of circle within map dimensions 
 def make_random_circle(mapdimensions:tuple[int],
-                       riskzone_radius:tuple[int]
+                       circle_radius:tuple[int]
                        ) -> tuple[int]:
     # init
     mapheight,mapwidth = mapdimensions
-    obstacleradius_min,obstacleradius_max = riskzone_radius
+    circleradius_min,circleradius_max = circle_radius
     # draw random values (# todo klopt nog niet helemaal met dimensions en binnen map)
     x_centre = int(random.uniform(150, mapwidth - 10))         
     y_centre = int(random.uniform(10, mapheight - 10))
-    radius = int(random.uniform(obstacleradius_min,obstacleradius_max))
+    radius = int(random.uniform(circleradius_min,circleradius_max))
     # return result
     return (x_centre,y_centre,radius)
