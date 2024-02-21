@@ -11,11 +11,11 @@ from Astar_utils import cross_riskzone, cross_circle
 #? remove outside node and check for better result
 #? calc LOS path cost or assume same as goalpath?
 #? make provisions for LORAD 
-#? check goal found not first of 8, but best of 8
 #? start locations independent of grid position
-#? try LOS farther from riskone, else safetymargin
+#? try LOS farther from riskzone, else safetymargin
 #? recalc costs along entire goalpath?
 #? calc LOS edge direction
+#? go from LOS to los?
 
 
 class AStarAlgorithm:
