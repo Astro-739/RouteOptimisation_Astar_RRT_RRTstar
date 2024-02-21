@@ -20,6 +20,7 @@ class GridNode:
         self.mediumriskzone_cnt = 0
         self.highriskzone_cnt = 0
         self.riskzones = {}
+        #? self.riskzone_lorad = {}    how lorad?? riskzone count lorad?
         self.risk_multiplier = 1
 
 

@@ -14,6 +14,8 @@ from Astar_utils import cross_riskzone, cross_circle
 #? check goal found not first of 8, but best of 8
 #? start locations independent of grid position
 #? try LOS farther from riskone, else safetymargin
+#? recalc costs along entire goalpath?
+#? calc LOS edge direction
 
 
 class AStarAlgorithm:
@@ -289,19 +291,18 @@ class AStarAlgorithm:
         for riskzone in self.riskzones:
             # distance between node location and centre of circle
             dist = math.dist(node.location,riskzone.location)
-            # if outside cirle, continue
+            # if outside riskzone, continue
             if dist > riskzone.radius + self.SAFETYMARGIN:
                 continue
             # if in highrisk zone
-            if dist < MEDIUMRISK_RADIUS_MULTIPLIER * riskzone.radius + self.SAFETYMARGIN:
+            elif dist < MEDIUMRISK_RADIUS_MULTIPLIER * riskzone.radius + self.SAFETYMARGIN:
                 node.riskzones.update({riskzone.location:HIGHRISK_RADIUS_MULTIPLIER})
-                continue
             # if in mediumrisk zone
-            if dist < LOWRISK_RADIUS_MULTIPLIER * riskzone.radius + self.SAFETYMARGIN:
+            elif dist < LOWRISK_RADIUS_MULTIPLIER * riskzone.radius + self.SAFETYMARGIN:
                 node.riskzones.update({riskzone.location:MEDIUMRISK_RADIUS_MULTIPLIER})
-                continue
             # else in lowrisk zone
-            node.riskzones.update({riskzone.location:LOWRISK_RADIUS_MULTIPLIER})
+            else:
+                node.riskzones.update({riskzone.location:LOWRISK_RADIUS_MULTIPLIER})
 
     # risk_multiplier is used to increase edgecost (edgecost = edgelength * risk_multiplier)
     def set_node_riskmultiplier(self,node:GridNode) -> None:
@@ -331,7 +332,7 @@ class AStarAlgorithm:
     
     # determine edge riskzones and update node riskzones 
     # when nodes are in the same riskzone and only the edge crosses another zone
-    # parentnode is node before edge crossing riskzone, node after crossing, in direction of goal
+    # parentnode is node before edge crossing riskzone, node is node after crossing, in direction of goal
     def set_edge_riskzones(self,node:GridNode,parentnode:GridNode) -> None:
         # check for all riskzones
         for circle in self.riskzones:
@@ -386,7 +387,7 @@ class AStarAlgorithm:
             self.update_gridpath_riskzones(node,goalpath)
             # add goalpath to total list of goalpaths
             self.goalpaths.append(goalpath)
-            ic(goalpath.riskzones)      # todo debug
+        # todo  update costs over entire path due to node updates
         # print results                
         print(f"{len(self.goalpaths)} goalpaths generated")
         return True
