@@ -120,24 +120,16 @@ class AStarAlgorithm:
                 tempnode.direction = new_direction
                 # set riskzone count and multiplier for tempnode
                 self.set_node_riskzones(tempnode)
-                self.set_edge_riskzones(qnode,tempnode)
+                self.set_edge_riskzones(tempnode,qnode)
                 self.set_node_riskmultiplier(tempnode)
                 # calculate costs based on risk multiplier
                 self.calc_edge_cost(tempnode)
-                self.calc_g_cost(tempnode,qnode)    #! check volgorde
+                self.calc_g_cost(tempnode,qnode)
                 self.calc_h_cost(tempnode)
                 self.calc_f_cost(tempnode)
-                # todo debug
-                if tempnode.location == (530,220):
-                    ic([tempnode.location,tempnode.riskzones,qnode.location,tempnode.f_cost])
-                    
                 # check for existing node on this location
                 # if node exists, it is on openlist or closedlist
                 node:GridNode = is_existing_gridnode(new_location,self.gridnodes)
-                # todo debug
-                if node is not None and node.location == (530,220):
-                    ic([node.location,node.riskzones,node.parent.location,node.f_cost])
-                
                 # if existing node and f_cost lower than tempnode, 
                 # leave as is, go to next point
                 if node is not None and node.f_cost <= tempnode.f_cost:
@@ -153,13 +145,9 @@ class AStarAlgorithm:
                     node.parent = qnode
                     self.gridnodes.append(node)
                     new_children.append(node)
-                # todo debug
-                #if node is not None and node.location == (530,220):
-                #    ic([node.location,node.riskzones,node.parent.location,node.f_cost])
-
-
             # check if goal found and update goalnode_list
             goalnode_list = self.check_goal_found(new_children,goalnode_list)
+            # when all goals found, set goalflag to true
             if len(goalnode_list) == 0:
                 self.goalfound = True
                 print("all goals found")
@@ -271,16 +259,12 @@ class AStarAlgorithm:
                 if dist < GOALRADIUS and dist < min_dist:
                     min_dist = dist
                     node_goalfound = node
-                # todo debug
-                if node is not None and node.location == (530,220):
-                    ic([node.location,node.riskzones,node.parent.location,node.f_cost])
-
             # check if goal was found, if so, set properties
             if node_goalfound is not None:
                 # node_goalfound becomes parent of goalnode
                 goalnode.parent = node_goalfound
                 goalnode.edgelength = min_dist
-                self.set_edge_riskzones(node_goalfound,goalnode)
+                self.set_edge_riskzones(goalnode,node_goalfound)
                 # calculate costs for goalnode based on risk multiplier
                 self.calc_edge_cost(goalnode)
                 self.calc_g_cost(goalnode,node_goalfound)
@@ -288,12 +272,6 @@ class AStarAlgorithm:
                 self.calc_f_cost(goalnode)
                 # remove found goal from list
                 goalnode_list.remove(goalnode)
-                # todo debug
-                if node_goalfound is not None and node_goalfound.location == (530,220):
-                    ic([node_goalfound.location,node_goalfound.riskzones,node_goalfound.parent.location,node_goalfound.f_cost])
-                #! node gets higher risk before goalfound
-                #! then gets overwritten later because other goals need to be found
-                #! overwriting causes riskzones to be screwed up
         # return updated goalnode_list
         return goalnode_list
 
@@ -353,33 +331,31 @@ class AStarAlgorithm:
     
     # determine edge riskzones and update node riskzones 
     # when nodes are in the same riskzone and only the edge crosses another zone
-    # node1 is node before edge crossing riskzone, node2 after, in direction of goal
-    def set_edge_riskzones(self,node1:GridNode,node2:GridNode) -> None:
+    # parentnode is node before edge crossing riskzone, node after crossing, in direction of goal
+    def set_edge_riskzones(self,node:GridNode,parentnode:GridNode) -> None:
         # check for all riskzones
         for circle in self.riskzones:
-            # edge check only if node1 and node2 are in the same riskzone
-            if node1.riskzones.get(circle.location) is not node2.riskzones.get(circle.location):
+            # edge check only if node and parentnode are in the same riskzone
+            if node.riskzones.get(circle.location) is not parentnode.riskzones.get(circle.location):
                 continue
             # get current radius multiplier
             radius_multiplier = 1.0
-            if circle.location in node2.riskzones:
-                radius_multiplier = node2.riskzones.get(circle.location)
+            if circle.location in node.riskzones:
+                radius_multiplier = node.riskzones.get(circle.location)
             # check if edge crosses riskzone while nodes are not in riskzone
             # and update radius multiplier
-            if cross_circle(node1,node2,circle,radius_multiplier,self.SAFETYMARGIN):
+            if cross_circle(node,parentnode,circle,radius_multiplier,self.SAFETYMARGIN):
                 if radius_multiplier == 0.5:
                     radius_multiplier = 0.0
                 if radius_multiplier == 0.8:
                     radius_multiplier = 0.5
                 if radius_multiplier == 1.0:
                     radius_multiplier = 0.8
-                # update node2 riskzone to account for edge crossing riskzone
-                # node2 is node after edge crossed riskzone in direction of goal
-                #! node1 is first node before edge crossing
-                #! why not node2?
+                # update node riskzone to account for edge crossing riskzone
+                # node is node after edge crossed riskzone in direction of goal
                 #! this gets overwritten somehow with qnode/tempnode/existing node
                 #todo also update goalpath because lower/higher f_cost
-                node2.riskzones.update({circle.location:radius_multiplier})
+                node.riskzones.update({circle.location:radius_multiplier})
 
     # build all paths to goal if goals have been found
     def create_goalpaths(self) -> bool:
@@ -395,9 +371,7 @@ class AStarAlgorithm:
                 # list of all nodes in goalpath
                 goalpath.nodes.insert(0,node)
                 # update goalpath riskzones, only if higher risk
-                ic(node.location,node.riskzones)      # todo debug
                 self.update_gridpath_riskzones(node,goalpath)
-                ic(node.location,node.riskzones)      # todo debug
                 # previousnode moves 1 up the line through parent of node
                 # nodes are copied for each path to be able to use Line of Sight (LOS) optimisation later
                 previousnode:GridNode = copy.deepcopy(node.parent)
