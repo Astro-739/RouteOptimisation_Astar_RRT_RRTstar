@@ -10,7 +10,7 @@ class GridNode:
         self.parent = None
         self.goalpath_parent = None
         self.goalpath_child = None
-        self.LOSpath_parent = None
+        self.lospath_parent = None
         self.edgelength = 0.0 
         self.edgecost = 100000.0     # edge from parent
         self.f_cost = 100000.0 
@@ -55,7 +55,7 @@ def update_node(node:GridNode,othernode:GridNode) -> GridNode:
     node.parent = othernode.parent
     node.goalpath_parent = othernode.goalpath_parent
     node.goalpath_child = othernode.goalpath_child
-    node.LOSpath_parent = othernode.LOSpath_parent
+    node.lospath_parent = othernode.lospath_parent
     node.edgelength = othernode.edgelength
     node.edgecost = othernode.edgecost
     node.f_cost = othernode.f_cost

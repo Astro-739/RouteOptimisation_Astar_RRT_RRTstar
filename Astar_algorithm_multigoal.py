@@ -408,7 +408,7 @@ class AStarAlgorithm:
     # check LOS to goal for each node walking from start to goal
     # farthest node from goal with LOS becomes node in LOS path
     # from this node check LOS for each node from start, etc.
-    def create_LOS_goalpaths_level3(self) -> bool:
+    def create_los_goalpaths_level3(self) -> bool:
         # check goal found
         if not self.goalfound: 
             return False
@@ -441,42 +441,42 @@ class AStarAlgorithm:
             # this gives a better final LOS path
             # use transition nodes list and pop first until walked through entire list 
             while len(transition_nodes_list) > 1:
-                LOS_basenode:GridNode = transition_nodes_list.pop(0)
+                los_basenode:GridNode = transition_nodes_list.pop(0)
                 node = transition_nodes_list[0]
                 # find local riskzones, between LOS basenode and node
-                LOS_localpath = GridPath(LOS_basenode)
-                stepnode:GridNode = LOS_basenode
+                los_localpath = GridPath(los_basenode)
+                stepnode:GridNode = los_basenode
                 while stepnode.location is not node.location:
-                    # update LOS_localpath riskzones
-                    self.update_gridpath_riskzones(stepnode,LOS_localpath)
+                    # update los_localpath riskzones
+                    self.update_gridpath_riskzones(stepnode,los_localpath)
                     # node moves 1 up the line
                     previousnode = stepnode.goalpath_parent
                     stepnode = previousnode
                 # include last node, mainly when node is startnode
-                self.update_gridpath_riskzones(stepnode,LOS_localpath)
+                self.update_gridpath_riskzones(stepnode,los_localpath)
                 # Line of Sight checks
-                while LOS_basenode.location is not node.location:
+                while los_basenode.location is not node.location:
                     # if node has LOS with basenode, add it to the LOS path
                     # node then becomes the next LOS basenode
-                    if not cross_riskzone(node,LOS_basenode,self.riskzones,
-                                          LOS_localpath,self.SAFETYMARGIN):
+                    if not cross_riskzone(node,los_basenode,self.riskzones,
+                                          los_localpath,self.SAFETYMARGIN):
                         # node and LOS basenode become each others parent and child
-                        LOS_basenode.LOSpath_parent = node
+                        los_basenode.lospath_parent = node
                         # node becomes next LOSbasenode
-                        LOS_basenode = node
+                        los_basenode = node
                         # LOS checks again from start
                         node = transition_nodes_list[0]
                         continue
                     # no LOS, move one node towards LOS basenode over goalpath
                     node = node.goalpath_child
                     # catch exception
-                    if node.location == LOS_basenode.location:
-                        print("node == LOS_basenode")   # todo
+                    if node.location == los_basenode.location:
+                        print("node == los_basenode")   # todo
                         break
         # LOS path accessed through LOS path goalnode
         # set LOS path cost
-        #?self.pathCostLOS(latestgoalnode)
-        print("LOS_goalpaths calculated")
+        #?self.pathCostlos(latestgoalnode)
+        print("los_goalpaths calculated")
         return True
 
 
@@ -487,7 +487,7 @@ class AStarAlgorithm:
     # check LOS to goal for each node walking from start to goal
     # farthest node from goal with LOS becomes node in LOS path
     # from this node check LOS for each node from start, etc.
-    def create_LOS_goalpaths_level2(self) -> bool:
+    def create_los_goalpaths_level2(self) -> bool:
         # check goal found
         if not self.goalfound: 
             return False
@@ -510,32 +510,32 @@ class AStarAlgorithm:
                 previousnode = node.goalpath_parent
                 node = previousnode
             # set outside node as first LOS path node after goalnode
-            goalpath.goalnode.LOSpath_parent = outsidenode
+            goalpath.goalnode.lospath_parent = outsidenode
             goalpath.highlightnode = outsidenode    # todo debug
             # start LOS checks at start node walking towards LOS basenode
             node = goalpath.startnode
-            LOS_basenode:GridNode = outsidenode
-            while LOS_basenode.location is not goalpath.startnode.location:
+            los_basenode:GridNode = outsidenode
+            while los_basenode.location is not goalpath.startnode.location:
                 # if node has LOS with basenode, add it to the LOS path
                 # node then becomes the next LOS basenode
-                if not self.cross_riskzone(node,LOS_basenode,goalpath):
+                if not self.cross_riskzone(node,los_basenode,goalpath):
                     # node and LOS basenode become each others parent and child
-                    LOS_basenode.LOSpath_parent = node
+                    los_basenode.lospath_parent = node
                     # node becomes next LOSbasenode
-                    LOS_basenode = node
+                    los_basenode = node
                     # LOS checks again from start
                     node = goalpath.startnode
                     continue
                 # no LOS, move one node towards LOS basenode over goalpath
                 node = node.goalpath_child
                 # catch exception
-                if node.location == LOS_basenode.location:
-                    print("node == LOS_basenode")   # todo
+                if node.location == los_basenode.location:
+                    print("node == los_basenode")   # todo
                     break
         # LOS path accessed through LOS path goalnode
         # set LOS path cost
-        #?self.pathCostLOS(latestgoalnode)
-        print("LOS_goalpaths calculated")
+        #?self.pathCostlos(latestgoalnode)
+        print("los_goalpaths calculated")
         return True
         
 
@@ -546,7 +546,7 @@ class AStarAlgorithm:
     # check LOS to goal for each node walking from start to goal
     # farthest node from goal with LOS becomes node in LOS path
     # from this node check LOS for each node from start, etc.
-    def create_LOS_goalpaths_level1(self) -> bool:
+    def create_los_goalpaths_level1(self) -> bool:
         # check goal found
         if not self.goalfound: 
             return False
@@ -555,26 +555,26 @@ class AStarAlgorithm:
         for goalpath in self.goalpaths:
             # start LOS checks at start node walking towards LOS basenode
             node:GridNode = goalpath.startnode
-            LOS_basenode:GridNode = goalpath.goalnode
-            while LOS_basenode.location is not goalpath.startnode.location:
+            los_basenode:GridNode = goalpath.goalnode
+            while los_basenode.location is not goalpath.startnode.location:
                 # if node has LOS with basenode, add it to the LOS path
                 # node then becomes the next LOS basenode
-                if not self.cross_riskzone(node,LOS_basenode,goalpath):
+                if not self.cross_riskzone(node,los_basenode,goalpath):
                     # node and LOS basenode become each others parent and child
-                    LOS_basenode.LOSpath_parent = node
+                    los_basenode.lospath_parent = node
                     # node becomes next LOSbasenode
-                    LOS_basenode = node
+                    los_basenode = node
                     # LOS checks again from start
                     node = goalpath.startnode
                     continue
                 # move one node towards LOS basenode over goalpath
                 node = node.goalpath_child
                 # catch exception
-                if node.location == LOS_basenode.location:
-                    print("node == LOS_basenode")   # todo
+                if node.location == los_basenode.location:
+                    print("node == los_basenode")   # todo
                     break
         # LOS path accessed through LOS path goalnode
         # set LOS path cost
-        #?self.pathCostLOS(latestgoalnode)
-        print("LOS_goalpaths calculated")
+        #?self.pathCostlos(latestgoalnode)
+        print("los_goalpaths calculated")
         return True

@@ -44,12 +44,12 @@ def main():
     start = time.perf_counter()
     astar.astar_search()
     astar.create_goalpaths()
-    astar.create_LOS_goalpaths_level3()
+    astar.create_los_goalpaths_level3()
     end = time.perf_counter()
     
     map.draw_tree(astar.gridnodes)
     map.draw_paths(astar.goalpaths)
-    map.draw_LOS_paths(astar.goalpaths)
+    map.draw_los_paths(astar.goalpaths)
     
     # riskzone locations
     print("zones: ",{circle.location:circle.radius for circle in riskzones})

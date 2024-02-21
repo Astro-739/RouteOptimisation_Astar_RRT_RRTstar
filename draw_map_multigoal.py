@@ -94,7 +94,7 @@ class RoutingMap_matplotlib:
                 
 
     # draw all Line of Sight (LOS) goal paths
-    def draw_LOS_paths(self,goalpaths:list[GridPath]) -> None:
+    def draw_los_paths(self,goalpaths:list[GridPath]) -> None:
         # set colour list to cycle through TABLEAU_COLORS per goalpath
         colours = []
         [colours.append(colour) for colour in mcolors.TABLEAU_COLORS]
@@ -107,15 +107,15 @@ class RoutingMap_matplotlib:
                 self.ax2.scatter(node.location[0],node.location[1],
                             color=colour,s=20,marker="o")
                 # catch exception
-                if node.LOSpath_parent is None:
-                    print("LOS_parent is None:  no LOS path calculated")
+                if node.lospath_parent is None:
+                    print("los_parent is None:  no los path calculated")
                     break
                 # draw edge between nodes
-                x_data = [node.location[0],node.LOSpath_parent.location[0]]
-                y_data = [node.location[1],node.LOSpath_parent.location[1]]
+                x_data = [node.location[0],node.lospath_parent.location[0]]
+                y_data = [node.location[1],node.lospath_parent.location[1]]
                 self.ax2.plot(x_data,y_data,color=colour,lw=1.0)
                 # next node
-                node = node.LOSpath_parent
+                node = node.lospath_parent
             # draw node at start location
             self.ax2.scatter(node.location[0],node.location[1],
                              color=colour,s=20,marker="o")
