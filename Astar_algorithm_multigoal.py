@@ -3,7 +3,7 @@ import copy
 from icecream import ic
 from Astar_utils import GridNode, GridPath, RiskZone
 from Astar_utils import update_node, is_existing_gridnode, is_within_mapdimensions
-from Astar_utils import cross_riskzone, cross_circle
+from Astar_utils import cross_riskzone, cross_circle, node_direction
 
 
         
@@ -13,9 +13,7 @@ from Astar_utils import cross_riskzone, cross_circle
 #? make provisions for LORAD 
 #? start locations independent of grid position
 #? try LOS farther from riskzone, else safetymargin
-#? recalc costs along entire goalpath?
 #? calc LOS edge direction
-#? go from LOS to los?
 
 
 class AStarAlgorithm:
@@ -392,11 +390,14 @@ class AStarAlgorithm:
         print(f"{len(self.goalpaths)} goalpaths generated")
         return True
     
-    # update gridpath riskzones when node has higher risk (lower risk radius)
+    # update gridpath riskzones when node has higher risk (smaller risk radius)
     def update_gridpath_riskzones(self,node:GridNode,gridpath:GridPath) -> None:
         for riskzone in node.riskzones:
+            # get node and path riskzone radius multipliers
             node_value = node.riskzones.get(riskzone)
             path_value = gridpath.riskzones.get(riskzone)
+            # path riskzone radius multiplier updated 
+            # when node riskzone multiplier is smaller (higher risk)
             if path_value is None or path_value > node_value:
                 gridpath.riskzones.update({riskzone:node_value})
         
@@ -462,7 +463,9 @@ class AStarAlgorithm:
                                           los_localpath,self.SAFETYMARGIN):
                         # node and LOS basenode become each others parent and child
                         los_basenode.lospath_parent = node
-                        # node becomes next LOSbasenode
+                        # set los_basenode direction
+                        los_basenode.lospath_direction = node_direction(los_basenode,node)
+                        # node becoes next LOSbasenode
                         los_basenode = node
                         # LOS checks again from start
                         node = transition_nodes_list[0]

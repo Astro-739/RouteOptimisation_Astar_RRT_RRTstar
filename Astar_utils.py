@@ -11,6 +11,7 @@ class GridNode:
         self.goalpath_parent = None
         self.goalpath_child = None
         self.lospath_parent = None
+        self.lospath_direction = None
         self.edgelength = 0.0 
         self.edgecost = 100000.0     # edge from parent
         self.f_cost = 100000.0 
@@ -29,7 +30,7 @@ class GridPath:
         self.startnode = None
         self.goalnode = goalnode
         self.nodes = []
-        self.path_f_cost = 0
+        self.path_f_cost = 10000.0
         self.riskzones = {}
         self.goal_riskzones = {}
         self.highlightnode = None       # todo  debug
@@ -45,9 +46,6 @@ class RiskZone:
 
 
 
-def create_grid(self) -> None:
-    pass
-
 # update node object properties with properties of othernode
 def update_node(node:GridNode,othernode:GridNode) -> GridNode:
     #node.location = othernode.location
@@ -56,6 +54,7 @@ def update_node(node:GridNode,othernode:GridNode) -> GridNode:
     node.goalpath_parent = othernode.goalpath_parent
     node.goalpath_child = othernode.goalpath_child
     node.lospath_parent = othernode.lospath_parent
+    node.lospath_direction = othernode.lospath_direction
     node.edgelength = othernode.edgelength
     node.edgecost = othernode.edgecost
     node.f_cost = othernode.f_cost
@@ -111,6 +110,18 @@ def dist_node_riskzone(node:GridNode,riskzones:list[RiskZone]) -> float:
         dist.append(math.dist(node.location,riskzone.location) - riskzone.radius)
     return min(dist)
         
+
+# node (and edge) diretion from parent to node, north = 0 deg
+def node_direction(node:GridNode,parentnode:GridNode) -> int:
+    # init
+    x_node,y_node = node.location
+    x_parent,y_parent = parentnode.location
+    # direction in rad with east = 0 rad
+    direction_rad = math.atan2((y_node - y_parent),(x_node - x_parent))
+    # direction in deg with north = 0 deg
+    direction_deg = int(round((360 - (direction_rad / math.pi * 180) + 90) % 360))
+    return direction_deg
+
 
 # check if connection between 2 nodes crosses a riskzone
 def cross_riskzone(node1:GridNode,

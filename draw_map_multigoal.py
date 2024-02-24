@@ -34,7 +34,7 @@ class RoutingMap_matplotlib:
         self.ax1.set_ylim([0,self.MAPHEIGHT])
         self.ax2.set_xlim([0,self.MAPWIDTH])
         self.ax2.set_ylim([0,self.MAPHEIGHT])
-        self.ax1.set_title("Multiple goal A* algorithm on risk zone map")
+        self.ax1.set_title("Multiple start/goal A* algorithm on risk zone map")
         self.ax2.set_title("Goal path Line of Sight optimisation")
 
     # draw base map with start and goal locations and riskzones
