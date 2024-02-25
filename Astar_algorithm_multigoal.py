@@ -352,8 +352,6 @@ class AStarAlgorithm:
                     radius_multiplier = 0.8
                 # update node riskzone to account for edge crossing riskzone
                 # node is node after edge crossed riskzone in direction of goal
-                #! this gets overwritten somehow with qnode/tempnode/existing node
-                #todo also update goalpath because lower/higher f_cost
                 node.riskzones.update({circle.location:radius_multiplier})
 
     # build all paths to goal if goals have been found
@@ -385,7 +383,6 @@ class AStarAlgorithm:
             self.update_gridpath_riskzones(node,goalpath)
             # add goalpath to total list of goalpaths
             self.goalpaths.append(goalpath)
-        # todo  update costs over entire path due to node updates
         # print results                
         print(f"{len(self.goalpaths)} goalpaths generated")
         return True
@@ -414,7 +411,7 @@ class AStarAlgorithm:
         if not self.goalfound: 
             return False
         # create LOS path for each goalpath
-        goalpath:GridPath       # todo declare in for statement?
+        goalpath:GridPath
         for goalpath in self.goalpaths:
             # mark all transitions in goalpath from inside to outside of a riskzone
             # and from outside to inside of a riskzone
@@ -495,7 +492,7 @@ class AStarAlgorithm:
         if not self.goalfound: 
             return False
         # latestgoalnode is latest new node at goal location, becomes basenode
-        goalpath:GridPath       # todo declare in for statement?
+        goalpath:GridPath
         for goalpath in self.goalpaths:
             # find first node outside of sams covering target
             outsidenode:GridNode = goalpath.goalnode
@@ -554,7 +551,7 @@ class AStarAlgorithm:
         if not self.goalfound: 
             return False
         # latestgoalnode is latest new node at goal location, becomes basenode
-        goalpath:GridPath       # todo declare in for statement?
+        goalpath:GridPath
         for goalpath in self.goalpaths:
             # start LOS checks at start node walking towards LOS basenode
             node:GridNode = goalpath.startnode
